@@ -66,7 +66,7 @@ export const Courses = () => {
             <Card 
               key={course.id}
               className="group cursor-pointer overflow-hidden p-0"
-              glowColor="rgba(24, 78, 80, 0.1)"
+              glowColor="rgba(139, 14, 42, 0.1)"
             >
               <div className="p-8">
                 <div className={`w-16 h-16 rounded-2xl ${course.color} text-white flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>

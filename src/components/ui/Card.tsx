@@ -10,7 +10,7 @@ interface CardProps {
   glowColor?: string;
 }
 
-export const Card = ({ children, className, glowColor = "rgba(212, 176, 106, 0.2)" }: CardProps) => {
+export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2)" }: CardProps) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 

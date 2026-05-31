@@ -51,7 +51,7 @@ export const Roadmap = () => {
 
         <div className="relative">
           {/* Central Line (visible on all screens, centered behind the icons) */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-white/10" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-accent" />
 
           <div className="space-y-12 lg:space-y-20">
             {steps.map((step, i) => (
@@ -75,8 +75,8 @@ export const Roadmap = () => {
                 </div>
 
                 {/* Central Circle (Always centered and visible) */}
-                <div className="relative z-10 flex-shrink-0 w-16 h-16 rounded-full bg-accent flex items-center justify-center shadow-[0_0_20px_rgba(212,176,106,0.3)] border-4 border-navy">
-                  <step.icon className="text-navy" size={28} />
+                <div className="relative z-10 flex-shrink-0 w-16 h-16 rounded-full bg-navy flex items-center justify-center shadow-[0_0_20px_rgba(201,168,106,0.3)] border-4 border-accent">
+                  <step.icon className="text-accent" size={28} />
                 </div>
 
                 {/* Mobile Content Column & Desktop Right Column */}

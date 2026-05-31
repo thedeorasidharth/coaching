@@ -116,7 +116,7 @@ export const Notices = () => {
                         {formatNoticeDate(notice.createdAt)}
                       </div>
                       {notice.isImportant && (
-                        <span className="px-2 py-0.5 rounded-full bg-accent text-navy text-[8px] font-black uppercase">Important</span>
+                        <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[8px] font-black uppercase">Important</span>
                       )}
                     </div>
                     <h3 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4 group-hover:text-primary transition-colors leading-snug">{notice.title}</h3>

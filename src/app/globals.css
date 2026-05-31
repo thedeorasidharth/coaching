@@ -1,22 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F3E4C3;
-  --foreground: #102A43;
-  --primary: #184E50;
-  --accent: #D4B06A;
-  --card: #FAF3E7;
+  --background: #F6F0E8;
+  --foreground: #1F2A44;
+  --primary: #8B0E2A;
+  --primary-hover: #731024;
+  --accent: #C9A86A;
+  --card: #FFFFFF;
   --white: #FFFFFF;
-  --navy: #102A43;
+  --navy: #1F2A44;
+  --secondary-bg: #EFE6DD;
+  --border: #E7DDD3;
+  --muted: #667085;
+  --secondary-accent: #B23A48;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-accent: var(--accent);
   --color-card: var(--card);
   --color-navy: var(--navy);
+  --color-secondary-bg: var(--secondary-bg);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-secondary-accent: var(--secondary-accent);
   
   --font-sans: var(--font-inter);
   --font-display: var(--font-outfit);
@@ -43,16 +53,16 @@
   }
 
   .text-glow {
-    text-shadow: 0 0 10px rgba(212, 176, 106, 0.4);
+    text-shadow: 0 0 10px rgba(201, 168, 106, 0.4);
   }
 
   .bg-pattern {
-    background-image: radial-gradient(circle at 2px 2px, rgba(24, 78, 80, 0.05) 1px, transparent 0);
+    background-image: radial-gradient(circle at 2px 2px, rgba(139, 14, 42, 0.05) 1px, transparent 0);
     background-size: 40px 40px;
   }
 
   .card-gradient {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 243, 231, 0.6) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 230, 221, 0.6) 100%);
   }
 }
 

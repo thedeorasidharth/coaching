@@ -70,7 +70,7 @@ export default function AdminAnalyticsPage() {
     fetchData();
   }, []);
 
-  const COLORS = ["#184E50", "#D4B06A", "#102A43", "#F3E4C3"];
+  const COLORS = ["#8B0E2A", "#C9A86A", "#1F2A44", "#F6F0E8"];
 
   if (loading) return <div className="h-[70vh] flex flex-col items-center justify-center space-y-4">
     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -131,18 +131,18 @@ export default function AdminAnalyticsPage() {
                   <AreaChart data={trendData}>
                      <defs>
                         <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#184E50" stopOpacity={0.1}/>
-                           <stop offset="95%" stopColor="#184E50" stopOpacity={0}/>
+                           <stop offset="5%" stopColor="#8B0E2A" stopOpacity={0.1}/>
+                           <stop offset="95%" stopColor="#8B0E2A" stopOpacity={0}/>
                         </linearGradient>
                      </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#184E5040' }} />
-                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#184E5040' }} domain={[0, 100]} />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#8B0E2A40' }} />
+                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#8B0E2A40' }} domain={[0, 100]} />
                      <Tooltip 
                         contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', padding: '20px' }}
-                        itemStyle={{ fontWeight: 800, color: '#184E50' }}
+                        itemStyle={{ fontWeight: 800, color: '#8B0E2A' }}
                      />
-                     <Area type="monotone" dataKey="score" stroke="#184E50" strokeWidth={4} fillOpacity={1} fill="url(#colorScore)" />
+                     <Area type="monotone" dataKey="score" stroke="#8B0E2A" strokeWidth={4} fillOpacity={1} fill="url(#colorScore)" />
                   </AreaChart>
                </ResponsiveContainer>
             </div>

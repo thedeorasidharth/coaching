@@ -41,12 +41,12 @@ export const Navbar = () => {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-10 sm:w-14 sm:h-14 group-hover:scale-105 transition-transform duration-300">
+          <div className="relative w-12 h-12 sm:w-16 sm:h-16 group-hover:scale-105 transition-transform duration-300">
             <Image
               src="/logo.png"
               alt="EDUSPARK Study Center Logo"
               fill
-              sizes="(max-width: 640px) 40px, 56px"
+              sizes="(max-width: 640px) 48px, 64px"
               priority
               className="object-contain"
             />
