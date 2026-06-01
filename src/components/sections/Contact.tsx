@@ -36,7 +36,7 @@ export const Contact = () => {
           >
             <h2 className="font-display text-4xl md:text-5xl font-black text-navy mb-8">Get In Touch</h2>
             <p className="text-navy/60 mb-12 max-w-lg">
-              Have questions? We're here to help. Visit our center or give us a call to discuss your child's future.
+              Have questions? We&apos;re here to help. Visit our center or give us a call to discuss your child&apos;s future.
             </p>
 
             <div className="space-y-10">
@@ -75,7 +75,7 @@ export const Contact = () => {
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="h-[500px] rounded-[3rem] overflow-hidden glass shadow-2xl relative border-8 border-white"
+            className="h-[320px] sm:h-[400px] md:h-[500px] rounded-[3rem] overflow-hidden glass shadow-2xl relative border-8 border-white"
           >
             <iframe
               title="EDUSPARK Sheoganj Center Location Map"
@@ -87,13 +87,14 @@ export const Contact = () => {
             />
             
             {/* Map Overlay HUD */}
-            <div className="absolute bottom-6 left-6 right-6 glass p-6 rounded-2xl flex items-center justify-between z-10">
+            <div className="absolute bottom-4 left-4 right-4 glass p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 z-10">
               <div>
-                <p className="text-xs font-black text-primary uppercase mb-1">EDUSPARK CENTER</p>
-                <p className="text-sm font-bold text-navy">Gaushala Road, Sheoganj</p>
+                <p className="text-[10px] font-black text-primary uppercase mb-0.5">EDUSPARK CENTER</p>
+                <p className="text-xs sm:text-sm font-bold text-navy">Gaushala Road, Sheoganj</p>
               </div>
               <Button 
                 size="sm" 
+                className="w-full sm:w-auto text-xs"
                 onClick={() => window.open("https://www.google.com/maps/dir/?api=1&destination=Krishna%20Complex%2C%20Gaushala%20Road%2C%20Sheoganj%2C%20Rajasthan%20307027%2C%20India", "_blank")}
               >
                 Directions

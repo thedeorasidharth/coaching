@@ -41,7 +41,7 @@ export const About = () => {
             <p className="text-lg text-navy/70 leading-relaxed mb-12">
               At EDUSPARK, we believe that every student has the potential to reach the top. Our approach goes beyond traditional coaching; we combine deep conceptual learning with state-of-the-art AI technology to create an environment where students thrive.
             </p>
-            
+
             <div className="space-y-8">
               {points.map((point, i) => (
                 <div key={i} className="flex gap-6">
@@ -86,7 +86,7 @@ export const About = () => {
                 </Card>
               </div>
             </div>
-            
+
             {/* Background pattern */}
             <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-primary/5 rounded-full blur-3xl" />
           </motion.div>

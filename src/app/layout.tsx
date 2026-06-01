@@ -31,6 +31,16 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/"
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ]
+  },
   openGraph: {
     title: "EDUSPARK Sheoganj | IIT-JEE & NEET Coaching Study Center",
     description: "Sheoganj's leading coaching center for IIT-JEE, NEET-UG, and XI-XII Foundation preparation. Learn from expert IIT Delhi alumni and leverage state-of-the-art AI smart classes.",
@@ -64,7 +74,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
     "@id": "https://edusparksheoganj.com/#organization",
-    "name": "EDUSPARK Study Center For Excellence",
+    "name": "EDUSPARK STUDY CENTER",
     "url": "https://edusparksheoganj.com",
     "logo": {
       "@type": "ImageObject",
@@ -87,7 +97,7 @@ export default function RootLayout({
       "latitude": "25.1481",
       "longitude": "73.0182"
     },
-    "telephone": "+919460234151",
+    "telephone": ["+919460234151", "+917976049149"],
     "openingHoursSpecification": [
       {
         "@type": "OpeningHoursSpecification",
@@ -103,13 +113,22 @@ export default function RootLayout({
         "closes": "19:00"
       }
     ],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": "+919460234151",
-      "contactType": "Admissions & Inquiries",
-      "areaServed": "IN",
-      "availableLanguage": ["English", "Hindi"]
-    },
+    "contactPoint": [
+      {
+        "@type": "ContactPoint",
+        "telephone": "+919460234151",
+        "contactType": "Admissions & Inquiries",
+        "areaServed": "IN",
+        "availableLanguage": ["English", "Hindi"]
+      },
+      {
+        "@type": "ContactPoint",
+        "telephone": "+917976049149",
+        "contactType": "Academic Support & Counseling",
+        "areaServed": "IN",
+        "availableLanguage": ["English", "Hindi"]
+      }
+    ],
     "sameAs": [
       "https://www.instagram.com/edusparksheoganj/"
     ]

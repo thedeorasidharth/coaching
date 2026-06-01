@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Bell, Calendar, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import api from "@/lib/axios";
 import { Notice } from "@/types";
 
 const staticNotices: Notice[] = [

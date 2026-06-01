@@ -10,15 +10,18 @@ export const FloatingParticles = () => {
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; iconIdx: number; duration: number }[]>([]);
 
   useEffect(() => {
-    const newParticles = Array.from({ length: 15 }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 20 + 20,
-      iconIdx: Math.floor(Math.random() * icons.length),
-      duration: Math.random() * 20 + 10,
-    }));
-    setParticles(newParticles);
+    const timer = setTimeout(() => {
+      const newParticles = Array.from({ length: 15 }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 20 + 20,
+        iconIdx: Math.floor(Math.random() * icons.length),
+        duration: Math.random() * 20 + 10,
+      }));
+      setParticles(newParticles);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

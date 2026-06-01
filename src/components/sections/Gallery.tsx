@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import api from "@/lib/axios";
 import { GalleryImage } from "@/types";
 
 const staticImages: GalleryImage[] = [
@@ -58,7 +57,7 @@ export const Gallery = () => {
             ))}
           </div>
         ) : (
-          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6">
             {images.map((img, i) => (
               <motion.div
                 key={img._id}
@@ -66,7 +65,7 @@ export const Gallery = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="relative overflow-hidden rounded-[2rem] group cursor-pointer break-inside-avoid"
+                className="relative overflow-hidden rounded-[2rem] group cursor-pointer break-inside-avoid mb-6"
               >
                 <img 
                   src={img.imageUrl} 

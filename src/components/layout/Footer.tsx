@@ -33,7 +33,7 @@ export const Footer = () => {
     },
     {
       icon: MessageCircle,
-      href: "https://wa.me/919460234151",
+      href: "https://wa.me/+919413913136",
       label: "Chat with EDUSPARK on WhatsApp",
     },
     {
@@ -65,7 +65,7 @@ export const Footer = () => {
               </div>
             </Link>
             <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-              Building concepts and creating toppers since 17+ years. Sheoganj's leading institute for IIT-JEE and NEET preparation.
+              Building concepts and creating toppers since 17+ years. Sheoganj&apos;s leading institute for IIT-JEE and NEET preparation.
             </p>
           </div>
 
@@ -103,14 +103,14 @@ export const Footer = () => {
             </p>
             <p className="text-white/50 text-sm mb-2">+91 9460234151</p>
             <p className="text-white/50 text-sm">+91 7976049149</p>
-            
+
             <div className="flex gap-4 mt-8">
               {socialLinks.map((item, i) => (
-                <a 
-                  key={i} 
-                  href={item.href} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  key={i}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={item.label}
                   className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-navy transition-all duration-300 text-white"
                 >

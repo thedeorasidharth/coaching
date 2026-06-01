@@ -15,7 +15,7 @@ export const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-pattern">
+    <section className="relative min-h-[600px] lg:min-h-[750px] xl:min-h-[850px] flex items-center justify-center pt-32 pb-16 md:pt-40 lg:pt-44 xl:pt-48 overflow-hidden bg-pattern">
       <FloatingParticles />
 
       <div className="container mx-auto px-6 relative z-10">
@@ -90,7 +90,7 @@ export const Hero = () => {
               <motion.div
                 animate={{ y: [0, -20, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-10 -right-10 glass p-6 rounded-3xl shadow-xl hidden md:block"
+                className="absolute -top-6 -right-2 sm:-right-4 md:-top-8 md:-right-6 lg:-top-10 lg:-right-8 xl:-top-12 xl:-right-10 glass p-6 rounded-3xl shadow-xl hidden md:block select-none z-20"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
@@ -106,7 +106,7 @@ export const Hero = () => {
               <motion.div
                 animate={{ y: [0, 20, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-10 -left-10 glass p-6 rounded-3xl shadow-xl hidden md:block"
+                className="absolute -bottom-6 -left-2 sm:-left-4 md:-bottom-8 md:-left-6 lg:-bottom-10 lg:-left-8 xl:-bottom-12 xl:-left-10 glass p-6 rounded-3xl shadow-xl hidden md:block select-none z-20"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">

@@ -5,9 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Brain, Sparkles, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/animations/ScrollReveal";
-import api from "@/lib/axios";
 
-const staticQuizzes = [
+interface StaticQuiz {
+  id: string;
+  subject: string;
+  question: string;
+  options: string[];
+  correct: number;
+}
+
+const staticQuizzes: StaticQuiz[] = [
   {
     id: "quiz1",
     subject: "Physics",
@@ -32,14 +39,13 @@ const staticQuizzes = [
 ];
 
 export const DailyQuiz = () => {
-  const [activeStep, setActiveStep] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [quiz, setQuiz] = useState<any>(null);
+  const [quiz, setQuiz] = useState<StaticQuiz | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Pick a random quiz, ideally different from the current one
-  const getNextQuiz = (currentQuiz: any) => {
+  const getNextQuiz = (currentQuiz: StaticQuiz | null): StaticQuiz => {
     const availableQuizzes = currentQuiz 
       ? staticQuizzes.filter(q => q.id !== currentQuiz.id)
       : staticQuizzes;
@@ -49,14 +55,17 @@ export const DailyQuiz = () => {
   };
 
   useEffect(() => {
-    try {
-      const initialQuiz = getNextQuiz(null);
-      setQuiz(initialQuiz);
-    } catch (error) {
-      console.error("Error setting daily quiz:", error);
-    } finally {
-      setLoading(false);
-    }
+    const timer = setTimeout(() => {
+      try {
+        const initialQuiz = getNextQuiz(null);
+        setQuiz(initialQuiz);
+      } catch (error) {
+        console.error("Error setting daily quiz:", error);
+      } finally {
+        setLoading(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleOptionClick = (idx: number) => {
@@ -82,7 +91,7 @@ export const DailyQuiz = () => {
               </div>
               <h2 className="font-display text-4xl md:text-5xl font-black text-navy mb-8">Test Your Brain with <br /><span className="text-primary italic">Daily Quick Quiz</span></h2>
               <p className="text-lg text-navy/70 leading-relaxed mb-8">
-                Engagement is the key to retention. Every day, we post a "Concept of the Day" quiz to keep our students sharp and competitive.
+                Engagement is the key to retention. Every day, we post a &quot;Concept of the Day&quot; quiz to keep our students sharp and competitive.
               </p>
               <ul className="space-y-4">
                 {["Real-time performance feedback", "Conceptual clarity check", "Ranked leaderboard for students"].map((item, i) => (

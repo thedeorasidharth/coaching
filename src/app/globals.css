@@ -40,16 +40,19 @@
   body {
     @apply bg-background text-foreground selection:bg-primary selection:text-white overflow-x-hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer utilities {
   .glass {
     @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-xl;
+    -webkit-backdrop-filter: blur(12px);
   }
   
   .glass-dark {
     @apply bg-primary/10 backdrop-blur-md border border-primary/10 shadow-xl;
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .text-glow {

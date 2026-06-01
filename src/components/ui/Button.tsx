@@ -14,7 +14,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", isMagnetic = true, children, ...props }, ref) => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const localRef = useRef<HTMLButtonElement>(null);
-    const buttonRef = (ref as any) || localRef;
+    const buttonRef = (ref as React.RefObject<HTMLButtonElement | null>) || localRef;
 
     const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!isMagnetic) return;
@@ -55,7 +55,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           sizes[size],
           className
         )}
-        {...(props as any)}
+        {...(props as Record<string, unknown>)}
       >
         <span className="relative z-10">{children}</span>
         <motion.div

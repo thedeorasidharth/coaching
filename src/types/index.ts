@@ -22,11 +22,18 @@ export interface GalleryImage {
   createdAt: string;
 }
 
+export interface Question {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  marks: number;
+}
+
 export interface Quiz {
   _id: string;
   title: string;
   description: string;
-  questions: any[];
+  questions: Question[];
   duration: number;
   isPublished: boolean;
   category: string;

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/Button";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,20 +39,20 @@ export const Navbar = () => {
         )}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-12 h-12 sm:w-16 sm:h-16 group-hover:scale-105 transition-transform duration-300">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+          <div className="relative w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] group-hover:scale-105 transition-transform duration-300">
             <Image
               src="/logo.png"
               alt="EDUSPARK Study Center Logo"
               fill
-              sizes="(max-width: 640px) 48px, 64px"
+              sizes="(max-width: 640px) 50px, 60px"
               priority
               className="object-contain"
             />
           </div>
           <div className="flex flex-col justify-center">
-            <span className="font-display text-xl sm:text-2xl font-black tracking-tight text-navy leading-none mb-0.5 sm:mb-1">EDUSPARK</span>
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-primary leading-none">Study Center</span>
+            <span className="font-display text-lg sm:text-2xl font-black tracking-tight text-navy leading-none mb-0.5 sm:mb-1">EDUSPARK</span>
+            <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-primary leading-none">Study Center</span>
           </div>
         </Link>
 
