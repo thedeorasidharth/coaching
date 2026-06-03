@@ -25,6 +25,58 @@ const staticFaculty: FacultyMember[] = [
   }
 ];
 
+interface FacultyCardProps {
+  member: FacultyMember;
+}
+
+export const FacultyCard: React.FC<FacultyCardProps> = ({ member }) => {
+  return (
+    <Card className="group p-0 overflow-hidden bg-card/50 hover:bg-white transition-colors duration-500 h-full flex flex-col justify-between [&>.z-10]:h-full [&>.z-10]:w-full">
+      <div className="flex flex-col md:flex-row h-full w-full items-stretch">
+        {/* Image */}
+        <div className="w-full md:w-1/2 aspect-[4/5] relative overflow-hidden flex-shrink-0">
+          <img 
+            src={member.imageUrl || "/faculty_placeholder.png"} 
+            alt={member.name} 
+            className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent md:hidden" />
+        </div>
+        
+        {/* Info */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <span className="text-xs uppercase tracking-widest font-black text-primary mb-2 block">{member.subject}</span>
+            <h3 className="text-2xl font-black text-navy mb-4 leading-tight min-h-[56px] flex items-center">{member.name}</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start gap-3">
+                <GraduationCap size={18} className="text-accent mt-1 flex-shrink-0" />
+                <div className="min-h-[60px] flex flex-col justify-start">
+                  {member.qualifications.map((q, idx) => (
+                    <p key={idx} className="text-sm font-medium text-navy/70 leading-tight mb-1 last:mb-0">{q}</p>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar size={18} className="text-accent flex-shrink-0" />
+                <p className="text-sm font-medium text-navy/70">Experience: {member.experience}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-6 border-t border-primary/10">
+            <div className="flex items-center gap-2">
+              <Award className="text-accent flex-shrink-0" size={20} />
+              <span className="text-xs font-bold text-navy/60 uppercase">Certified Excellence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 export const Faculty = () => {
   const faculty = staticFaculty;
   const loading = false;
@@ -60,49 +112,7 @@ export const Faculty = () => {
             ))
           ) : (
             faculty.map((member) => (
-              <Card key={member._id} className="group p-0 overflow-hidden bg-card/50 hover:bg-white transition-colors duration-500 h-full flex flex-col justify-between">
-                <div className="flex flex-col md:flex-row h-full w-full items-stretch">
-                  {/* Image */}
-                  <div className="md:w-1/2 relative overflow-hidden h-80 md:h-auto self-stretch flex-shrink-0">
-                    <img 
-                      src={member.imageUrl || "/faculty_placeholder.png"} 
-                      alt={member.name} 
-                      className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent md:hidden" />
-                  </div>
-                  
-                  {/* Info */}
-                  <div className="md:w-1/2 p-6 sm:p-8 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs uppercase tracking-widest font-black text-primary mb-2 block">{member.subject}</span>
-                      <h3 className="text-2xl font-black text-navy mb-4 leading-tight min-h-[56px] flex items-center">{member.name}</h3>
-                      
-                      <div className="space-y-4 mb-6">
-                        <div className="flex items-start gap-3">
-                          <GraduationCap size={18} className="text-accent mt-1 flex-shrink-0" />
-                          <div className="min-h-[60px] flex flex-col justify-start">
-                            {member.qualifications.map((q, idx) => (
-                              <p key={idx} className="text-sm font-medium text-navy/70 leading-tight mb-1 last:mb-0">{q}</p>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Calendar size={18} className="text-accent flex-shrink-0" />
-                          <p className="text-sm font-medium text-navy/70">Experience: {member.experience}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-6 border-t border-primary/10">
-                      <div className="flex items-center gap-2">
-                        <Award className="text-accent flex-shrink-0" size={20} />
-                        <span className="text-xs font-bold text-navy/60 uppercase">Certified Excellence</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <FacultyCard key={member._id} member={member} />
             ))
           )}
         </div>
