@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://edusparksheoganj.com/sitemap.xml

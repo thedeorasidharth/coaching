@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,21 +14,24 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "EDUSPARK – Study Center For Excellence | IIT-JEE & NEET Coaching in Sheoganj",
-  description: "EDUSPARK is Sheoganj's premier coaching institute for IIT-JEE, NEET, and XI-XII Foundation. Learn from expert IIT Delhi alumni and leverage state-of-the-art AI smart classes, located near Ambuja Cement, Gaushala Road.",
+  title: "EduSpark Excellence | Best Coaching Institute in Sheoganj for IIT-JEE & NEET",
+  description: "EduSpark Excellence is the best coaching institute in Sheoganj, Rajasthan for IIT-JEE, NEET, competitive exam prep, and school coaching (classes VI-XII). Study with expert faculty, advanced smart classes, and personal mentoring.",
   keywords: [
+    "coaching institute sheoganj",
+    "best coaching in sheoganj",
+    "eduspark excellence",
+    "competitive exam coaching",
+    "school coaching sheoganj",
+    "coaching classes rajasthan",
     "IIT JEE coaching in Sheoganj",
     "NEET coaching in Sheoganj",
-    "Best coaching institute in Sheoganj",
     "Physics coaching in Sheoganj",
     "XI XII foundation classes",
-    "Coaching near Ambuja Cement Sheoganj",
-    "EDUSPARK Sheoganj",
-    "Science Coaching Sheoganj",
-    "EDUSPARK Study Center"
+    "EduSpark Sheoganj",
+    "Science Coaching Sheoganj"
   ],
-  authors: [{ name: "EDUSPARK Sheoganj" }],
-  metadataBase: new URL("https://edusparksheoganj.com"),
+  authors: [{ name: "EduSpark Excellence" }],
+  metadataBase: new URL("https://edusparksheoganj.in"),
   alternates: {
     canonical: "/"
   },
@@ -42,10 +46,10 @@ export const metadata: Metadata = {
     ]
   },
   openGraph: {
-    title: "EDUSPARK Sheoganj | IIT-JEE & NEET Coaching Study Center",
-    description: "Sheoganj's leading coaching center for IIT-JEE, NEET-UG, and XI-XII Foundation preparation. Learn from expert IIT Delhi alumni and leverage state-of-the-art AI smart classes.",
-    url: "https://edusparksheoganj.com",
-    siteName: "EDUSPARK Sheoganj",
+    title: "EduSpark Excellence | Best Coaching Institute in Sheoganj",
+    description: "Prepare for IIT-JEE, NEET, competitive exams, and school board foundation classes at Sheoganj's top coaching institute. Proven results with expert faculty.",
+    url: "https://edusparksheoganj.in",
+    siteName: "EduSpark Excellence",
     locale: "en_IN",
     type: "website",
     images: [
@@ -53,16 +57,34 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 512,
         height: 512,
-        alt: "EDUSPARK Study Center Logo"
+        alt: "EduSpark Excellence Logo"
       }
     ]
   },
   twitter: {
-    card: "summary",
-    title: "EDUSPARK Sheoganj | IIT-JEE & NEET Coaching Center",
-    description: "Join EDUSPARK near Ambuja Cement, Sheoganj for top-tier Physics, Chemistry, and Biology/Maths conceptual preparation.",
+    card: "summary_large_image",
+    title: "EduSpark Excellence | Best Coaching Institute in Sheoganj",
+    description: "Join EduSpark Excellence in Sheoganj for top-tier IIT-JEE, NEET, and school coaching classes. Proven learning methods and expert mentorship.",
     images: ["/logo.png"]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   }
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
 };
 
 export default function RootLayout({
@@ -73,17 +95,17 @@ export default function RootLayout({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
-    "@id": "https://edusparksheoganj.com/#organization",
-    "name": "EDUSPARK STUDY CENTER",
-    "url": "https://edusparksheoganj.com",
+    "@id": "https://edusparksheoganj.in/#organization",
+    "name": "EduSpark Excellence",
+    "url": "https://edusparksheoganj.in",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://edusparksheoganj.com/logo.png",
+      "url": "https://edusparksheoganj.in/logo.png",
       "width": "512",
       "height": "512"
     },
-    "image": "https://edusparksheoganj.com/logo.png",
-    "description": "EDUSPARK is Sheoganj's leading coaching institute for competitive exams like IIT-JEE (Main & Advanced), NEET-UG, and school board (XI-XII) foundation classes.",
+    "image": "https://edusparksheoganj.in/logo.png",
+    "description": "EduSpark Excellence is Sheoganj's leading coaching institute for competitive exams like IIT-JEE (Main & Advanced), NEET-UG, and school board (XI-XII) foundation classes.",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "2nd Floor, Krishna Prime Complex, Opposite Ambuja Cement, Gaushala Road",
@@ -147,8 +169,8 @@ export default function RootLayout({
           "description": "Rigorous training course for JEE Main & Advanced prep featuring deep physics, chemistry, and mathematics focus under Dr. Mahipal Singh Deora.",
           "provider": {
             "@type": "EducationalOrganization",
-            "name": "EDUSPARK Sheoganj",
-            "sameAs": "https://edusparksheoganj.com"
+            "name": "EduSpark Excellence",
+            "sameAs": "https://edusparksheoganj.in"
           }
         }
       },
@@ -161,8 +183,8 @@ export default function RootLayout({
           "description": "Comprehensive preparation course for NEET-UG aspirants with mock exam repetitions and detailed biological/chemical core conceptual learning.",
           "provider": {
             "@type": "EducationalOrganization",
-            "name": "EDUSPARK Sheoganj",
-            "sameAs": "https://edusparksheoganj.com"
+            "name": "EduSpark Excellence",
+            "sameAs": "https://edusparksheoganj.in"
           }
         }
       },
@@ -175,8 +197,8 @@ export default function RootLayout({
           "description": "Dual curriculum science foundation classes designed for high school boards while setting conceptual structures for competitive exam requirements.",
           "provider": {
             "@type": "EducationalOrganization",
-            "name": "EDUSPARK Sheoganj",
-            "sameAs": "https://edusparksheoganj.com"
+            "name": "EduSpark Excellence",
+            "sameAs": "https://edusparksheoganj.in"
           }
         }
       }
@@ -194,6 +216,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <GoogleAnalytics gaId="G-CH822ES6FZ" />
       </body>
     </html>
   );

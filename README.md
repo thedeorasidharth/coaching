@@ -214,10 +214,10 @@ git push -u origin main
 
 ### 3. DNS Custom Domain Mapping
 1. Go to Vercel **Settings** > **Domains**.
-2. Input `edusparksheoganj.com` (and `www.edusparksheoganj.com`) and click **Add**.
+2. Input `edusparksheoganj.in` (and `www.edusparksheoganj.in`) and click **Add**.
 3. Configure the following DNS values with your domain registrar:
-   - **Apex Domain (`edusparksheoganj.com`)**: Add an `A` record pointing to `76.76.21.21`.
-   - **Subdomain (`www.edusparksheoganj.com`)**: Add a `CNAME` record pointing to `cname.vercel-dns.com`.
+   - **Apex Domain (`edusparksheoganj.in`)**: Add an `A` record pointing to `76.76.21.21`.
+   - **Subdomain (`www.edusparksheoganj.in`)**: Add a `CNAME` record pointing to `cname.vercel-dns.com`.
 4. Wait 5–15 minutes for the Let's Encrypt SSL certificate to auto-provision.
 
 ---
