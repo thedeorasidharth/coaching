@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { GalleryImage } from "@/types";
 
@@ -67,10 +68,13 @@ export const Gallery = () => {
                 transition={{ delay: i * 0.05 }}
                 className="relative overflow-hidden rounded-[2rem] group cursor-pointer break-inside-avoid mb-6"
               >
-                <img 
+                <Image 
                   src={img.imageUrl} 
                   alt={img.caption || "Gallery"} 
-                  className="w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center">

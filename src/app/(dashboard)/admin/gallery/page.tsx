@@ -6,6 +6,7 @@ import { Image as ImageIcon, Plus, Trash2, Camera, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import api from "@/lib/axios";
+import Image from "next/image";
 import { GalleryImage } from "@/types";
 
 export default function AdminGallery() {
@@ -114,9 +115,12 @@ export default function AdminGallery() {
               animate={{ opacity: 1, scale: 1 }}
               className="relative group rounded-[2rem] overflow-hidden break-inside-avoid shadow-lg"
             >
-              <img 
+              <Image 
                 src={img.imageUrl} 
                 alt={img.caption || "Gallery"} 
+                width={800}
+                height={600}
+                unoptimized
                 className="w-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-navy/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center">
