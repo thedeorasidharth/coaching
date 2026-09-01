@@ -6,11 +6,17 @@ import bcrypt from 'bcryptjs';
 export const createStudent = async (req: Request, res: Response) => {
   try {
     console.log("POST /api/students - Request Body:", req.body);
-    const { username } = req.body;
-    const existingStudent = await Student.findOne({ username });
-    if (existingStudent) {
-      console.warn("Student creation failed: Username exists", username);
-      return res.status(400).json({ message: 'Student with this username already exists' });
+    const { phone, username } = req.body;
+    const searchPhone = phone || username;
+
+    if (searchPhone) {
+      const existingStudent = await Student.findOne({
+        $or: [{ phone: searchPhone }, { username: searchPhone }]
+      });
+      if (existingStudent) {
+        console.warn("Student creation failed: Mobile number exists", searchPhone);
+        return res.status(400).json({ message: 'Student with this mobile number already exists' });
+      }
     }
 
     const student = new Student(req.body);
@@ -25,14 +31,20 @@ export const createStudent = async (req: Request, res: Response) => {
 
 export const getStudents = async (req: Request, res: Response) => {
   try {
-    const { className, course, search } = req.query;
+    const { className, class: classFilter, course, search } = req.query;
     let query: any = {};
 
-    if (className) query.class = className;
-    if (course) query.enrolledCourses = { $in: [course] };
+    const targetClass = classFilter || className;
+    if (targetClass && targetClass !== 'All Classes' && targetClass !== 'all') {
+      query.class = targetClass;
+    }
+    if (course && course !== 'All Courses' && course !== 'all') {
+      query.course = course;
+    }
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
         { username: { $regex: search, $options: 'i' } }
       ];
     }
@@ -59,13 +71,31 @@ export const updateStudent = async (req: Request, res: Response) => {
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    // Prevent updating password through this route
+    // Validate phone uniqueness if phone is being changed
+    if (req.body.phone && req.body.phone.trim() !== student.phone) {
+      const cleanPhone = req.body.phone.trim();
+      const duplicate = await Student.findOne({
+        phone: cleanPhone,
+        _id: { $ne: req.params.id }
+      });
+      if (duplicate) {
+        return res.status(400).json({ message: 'Another student with this mobile number already exists' });
+      }
+      req.body.phone = cleanPhone;
+    }
+
+    // Never expose or allow password modification via this route
     if (req.body.password) delete req.body.password;
 
-    const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true }
+    ).select('-password');
+
     res.json(updatedStudent);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || 'Server error' });
   }
 };
 

@@ -31,7 +31,11 @@ export default function AdminLoginPage() {
       setUser(response.data);
       router.push("/admin/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Admin login failed. Please check your credentials.");
+      if (!err.response) {
+        setError("Unable to connect to Express backend server (Port 5002). Please ensure the backend server is running.");
+      } else {
+        setError(err.response?.data?.message || "Admin login failed. Please check your credentials.");
+      }
     } finally {
       setLoading(false);
     }

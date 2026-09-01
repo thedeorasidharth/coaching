@@ -35,6 +35,7 @@ app.use(cookieParser());
 app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentAuthRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/admin/students', studentRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/analytics', analyticsRoutes);

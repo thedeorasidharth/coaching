@@ -8,9 +8,10 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   glowColor?: string;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2)" }: CardProps) => {
+export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2)", onClick }: CardProps) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -37,8 +38,11 @@ export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2
     y.set(0);
   };
 
+  const hasCustomBg = className?.includes("bg-");
+
   return (
     <motion.div
+      onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -47,7 +51,8 @@ export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2
         transformStyle: "preserve-3d",
       }}
       className={cn(
-        "relative group glass rounded-3xl p-6 transition-shadow duration-500 hover:shadow-2xl",
+        "relative group rounded-3xl p-6 transition-shadow duration-500 hover:shadow-2xl",
+        hasCustomBg ? "" : "bg-white border border-navy/5 shadow-xl",
         className
       )}
     >

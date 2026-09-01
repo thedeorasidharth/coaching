@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 
 const navLinks = [
   { name: "Home", href: "#" },
@@ -68,21 +69,13 @@ export const Navbar = () => {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
-          {/* <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Link href="/login">
-              <Button size="sm" variant="outline" className="hidden lg:flex border-primary/20 text-navy hover:bg-primary/5">
-                Student Login
+              <Button size="sm" className="hidden md:flex items-center gap-2 shadow-lg shadow-primary/20">
+                <Sparkles size={16} /> Test Series
               </Button>
             </Link>
-            <Link href="/admin/login">
-              <Button size="sm" variant="ghost" className="hidden lg:flex text-navy/60 hover:text-primary">
-                Admin
-              </Button>
-            </Link>
-            <Button size="sm" onClick={() => document.getElementById('demo-form')?.scrollIntoView({ behavior: 'smooth' })}>
-              Free Demo
-            </Button>
-          </div> */}
+          </div>
         </div>
 
         {/* Mobile Toggle */}
@@ -115,24 +108,13 @@ export const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              {/* <div className="w-full flex flex-col gap-3">
+              <div className="w-full flex flex-col gap-3 pt-4 border-t border-navy/10">
                 <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button size="lg" variant="outline" className="w-full border-primary/20 text-navy">
-                    Student Login
+                  <Button size="lg" className="w-full flex items-center justify-center gap-2">
+                    <Sparkles size={18} /> Test Series Portal
                   </Button>
                 </Link>
-                <Link href="/admin/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button size="lg" variant="ghost" className="w-full text-navy/60">
-                    Admin Login
-                  </Button>
-                </Link>
-                <Button size="lg" className="w-full" onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  document.getElementById('demo-form')?.scrollIntoView({ behavior: 'smooth' });
-                }}>
-                  Book Free Demo
-                </Button>
-              </div> */}
+              </div>
             </div>
           </motion.div>
         )}

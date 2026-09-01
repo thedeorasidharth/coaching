@@ -80,6 +80,11 @@ export const Footer = () => {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/login" className="text-accent hover:underline font-bold transition-colors text-sm flex items-center gap-1">
+                  Test Series Portal
+                </Link>
+              </li>
             </ul>
           </div>
 

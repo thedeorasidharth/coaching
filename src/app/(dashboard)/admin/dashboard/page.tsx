@@ -43,6 +43,7 @@ export default function AdminDashboard() {
     { name: "Total Students", value: analytics?.totalStudents || "0", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
     { name: "Quizzes Created", value: analytics?.totalQuizzes || "0", icon: BookOpen, color: "text-purple-500", bg: "bg-purple-500/10" },
     { name: "Active Notices", value: analytics?.totalNotices || "0", icon: Bell, color: "text-orange-500", bg: "bg-orange-500/10" },
+    { name: "Avg Score", value: `${analytics?.performance || 0}%`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10" }
   ];
 
   return (
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
         </div>
         <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white shadow-xl border-2 border-primary/5">
           <TrendingUp className="text-primary" size={20} />
-          <span className="text-sm font-bold text-navy">Avg Score: <span className="text-primary">{analytics?.performance || 0}%</span></span>
+          <span className="text-sm font-bold text-navy">Avg Performance: <span className="text-primary">{analytics?.performance || 0}%</span></span>
         </div>
       </div>
 
@@ -92,8 +93,8 @@ export default function AdminDashboard() {
                 <thead className="bg-navy/5">
                   <tr>
                     <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Name</th>
-                    <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Enrollment</th>
-                    <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Class</th>
+                    <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Mobile Number</th>
+                    <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Course / Class</th>
                     <th className="px-6 py-4 text-xs font-black text-navy/40 uppercase tracking-widest">Status</th>
                   </tr>
                 </thead>
@@ -110,13 +111,13 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                              {student.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                              {student.fullName ? student.fullName[0].toUpperCase() : 'S'}
                             </div>
                             <span className="font-bold text-navy">{student.fullName}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-navy/60">{student.username}</td>
-                        <td className="px-6 py-4 font-medium text-navy/60">{student.class}</td>
+                        <td className="px-6 py-4 font-medium text-navy/60">{student.phone}</td>
+                        <td className="px-6 py-4 font-medium text-navy/60">{student.course || 'JEE'} • {student.class}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${student.status === 'active' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
                             {student.status}

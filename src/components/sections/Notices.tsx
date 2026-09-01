@@ -1,48 +1,36 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Bell, Calendar, ArrowRight } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Calendar, ArrowRight, X, ShieldAlert, Tag, Building } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Notice } from "@/types";
-
-const staticNotices: Notice[] = [
-  {
-    _id: "notice1",
-    title: "Admissions Open for Target Batch 2026-27",
-    content: "Direct admissions and scholarship cum admission tests (SEAT) are open for Class XI, XII, and Repeater batches.",
-    createdAt: "2026-05-20T12:00:00.000Z",
-    isImportant: true,
-  },
-  {
-    _id: "notice2",
-    title: "New Batches Commencing from June 1st",
-    content: "New offline and hybrid batches for JEE (Main+Advanced) and NEET-UG are starting. Register to secure your seat.",
-    createdAt: "2026-05-18T12:00:00.000Z",
-    isImportant: true,
-  },
-  {
-    _id: "notice3",
-    title: "Free Strategy Seminar by Expert Faculty",
-    content: "Join our expert faculty for a strategy session on mastering physics & chemistry concepts on May 30th.",
-    createdAt: "2026-05-15T12:00:00.000Z",
-    isImportant: false,
-  },
-  {
-    _id: "notice4",
-    title: "National Scholarship Test (NST) Registration",
-    content: "Register online or visit our center to participate in the NST. Up to 100% tuition fee waiver based on performance.",
-    createdAt: "2026-05-12T12:00:00.000Z",
-    isImportant: false,
-  }
-];
+import api from "@/lib/axios";
 
 export const Notices = () => {
-  const notices = staticNotices;
-  const loading = false;
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
-  // Deterministic UTC date formatter to permanently eliminate locales hydration warnings
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  const fetchNotices = async () => {
+    try {
+      const { data } = await api.get("/notices");
+      setNotices(data);
+    } catch (error) {
+      console.error("Error fetching public notices:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Deterministic UTC date formatter to eliminate hydration locale warnings
   const formatNoticeDate = (dateStr: string) => {
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     const day = String(date.getUTCDate()).padStart(2, "0");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -89,47 +77,173 @@ export const Notices = () => {
             viewport={{ once: true }}
             className="text-white/40 max-w-md text-right hidden md:block"
           >
-            Stay informed with the latest announcements, batch updates, and exam schedules.
+            Stay informed with official announcements, exam alerts, and academic schedules.
           </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {loading ? (
             [1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-48 rounded-3xl bg-white/5 animate-pulse" />
+              <div key={i} className="h-56 rounded-3xl bg-white/5 animate-pulse" />
             ))
-          ) : (
+          ) : notices.length > 0 ? (
             notices.map((notice, i) => (
               <motion.div
                 key={notice._id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.05 }}
               >
-                <Card className={`h-full group relative overflow-hidden transition-all duration-500 border-white/5 hover:border-primary/30 ${notice.isImportant ? 'bg-primary/10' : 'bg-white/5'}`}>
-                  <div className="p-6 sm:p-8">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                <Card 
+                  onClick={() => setSelectedNotice(notice)}
+                  className={`h-full group relative overflow-hidden transition-all duration-500 border-white/5 hover:border-primary/30 cursor-pointer flex flex-col justify-between ${
+                    notice.isImportant ? 'bg-primary/10 border-l-4 border-l-primary' : 'bg-white/5'
+                  }`}
+                >
+                  <div className="p-6 sm:p-8 flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/40 uppercase tracking-widest">
                         <Calendar size={12} />
                         {formatNoticeDate(notice.createdAt)}
                       </div>
                       {notice.isImportant && (
-                        <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[8px] font-black uppercase">Important</span>
+                        <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[8px] font-black uppercase tracking-wider shrink-0">
+                          Important
+                        </span>
                       )}
                     </div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-4 group-hover:text-primary transition-colors leading-snug">{notice.title}</h3>
-                    <p className="text-xs sm:text-sm text-white/60 line-clamp-2 mb-4 sm:mb-6">{notice.content}</p>
-                    <div className="flex items-center gap-2 text-xs font-bold text-primary group-hover:gap-4 transition-all">
-                      Read More <ArrowRight size={14} />
+
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {notice.category && (
+                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-[9px] font-bold">
+                          {notice.category}
+                        </span>
+                      )}
+                      {notice.targetClass && (
+                        <span className="px-2 py-0.5 rounded-md bg-accent/20 text-accent text-[9px] font-bold">
+                          {notice.targetClass}
+                        </span>
+                      )}
                     </div>
+
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-3 group-hover:text-primary transition-colors leading-snug">
+                      {notice.title}
+                    </h3>
+                    
+                    <p className="text-xs sm:text-sm text-white/60 line-clamp-3 mb-6 flex-1">
+                      {notice.content}
+                    </p>
+
+                    <button 
+                      type="button" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedNotice(notice);
+                      }}
+                      className="mt-auto inline-flex items-center gap-2 text-xs font-bold text-primary group-hover:gap-3 transition-all"
+                    >
+                      Read More <ArrowRight size={14} />
+                    </button>
                   </div>
                 </Card>
               </motion.div>
             ))
+          ) : (
+            <div className="col-span-full py-16 text-center space-y-4 bg-white/5 rounded-[2.5rem] border border-white/5">
+              <Bell size={40} className="mx-auto text-white/20" />
+              <h3 className="text-lg font-bold text-white/60">No active notices at the moment</h3>
+              <p className="text-xs text-white/40">Check back later for official announcements and updates.</p>
+            </div>
           )}
         </div>
       </div>
+
+      {/* FULL NOTICE DETAIL MODAL */}
+      <AnimatePresence>
+        {selectedNotice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setSelectedNotice(null)} 
+              className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }} 
+              className="relative w-full max-w-xl bg-navy-light text-white rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto z-10"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedNotice.isImportant && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-wider">
+                        <ShieldAlert size={12} /> Important Notice
+                      </span>
+                    )}
+                    {selectedNotice.category && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-white/10 text-white/80 text-[10px] font-bold">
+                        {selectedNotice.category}
+                      </span>
+                    )}
+                    {selectedNotice.targetClass && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-accent/20 text-accent text-[10px] font-bold">
+                        {selectedNotice.targetClass}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-white text-xl sm:text-2xl leading-snug">{selectedNotice.title}</h3>
+                  <p className="text-[11px] font-bold text-white/40 flex items-center gap-1.5">
+                    <Calendar size={12} /> Published {formatNoticeDate(selectedNotice.createdAt)}
+                  </p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedNotice(null)} 
+                  className="text-white/40 hover:text-white p-2 rounded-xl bg-white/5 transition-all shrink-0"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content Body */}
+              <div className="space-y-4">
+                <p className="text-sm sm:text-base text-white/80 leading-relaxed font-medium whitespace-pre-line">
+                  {selectedNotice.content}
+                </p>
+
+                {selectedNotice.attachmentUrl && (
+                  <div className="pt-2">
+                    <a 
+                      href={selectedNotice.attachmentUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 text-accent border border-primary/30 text-xs font-bold hover:bg-primary/30 transition-all"
+                    >
+                      View Attachment / Link
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-4 border-t border-white/10 flex justify-end">
+                <Button 
+                  type="button" 
+                  onClick={() => setSelectedNotice(null)} 
+                  className="h-11 px-6 text-xs rounded-xl"
+                >
+                  Close Notice
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

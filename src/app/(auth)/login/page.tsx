@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Sparkles, User, Lock, ArrowRight, GraduationCap } from "lucide-react";
+import { Sparkles, Phone, Lock, ArrowRight, GraduationCap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
+import Link from "next/link";
 
 export default function StudentLoginPage() {
-  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,14 +25,14 @@ export default function StudentLoginPage() {
 
     try {
       const response = await api.post("/student/login", {
-        username,
+        phone,
         password,
       });
 
       setUser(response.data);
       router.push("/student/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
+      setError(err.response?.data?.message || "Login failed. Please check your mobile number and password.");
     } finally {
       setLoading(false);
     }
@@ -64,18 +65,18 @@ export default function StudentLoginPage() {
           
           <form onSubmit={handleLogin} className="space-y-6 relative z-10">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Username</label>
+              <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Mobile Number</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-navy/30">
-                  <User size={18} />
+                  <Phone size={18} />
                 </div>
                 <input
                   required
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full h-14 bg-white border-2 border-navy/5 rounded-2xl pl-12 pr-6 outline-none focus:border-primary/20 transition-all text-navy font-bold"
-                  placeholder="Enter your username"
+                  placeholder="Enter 10-digit mobile number"
                 />
               </div>
             </div>
@@ -122,13 +123,18 @@ export default function StudentLoginPage() {
         </Card>
 
         <div className="mt-8 text-center space-y-4">
-          <p className="text-navy/40 text-xs font-medium">
-            Forget your password? Contact the study center.
+          <p className="text-navy/60 text-xs font-medium">
+            New student?{" "}
+            <Link href="/signup" className="text-primary font-bold hover:underline">
+              Register for Test Series
+            </Link>
           </p>
           <div className="pt-4 border-t border-navy/5">
-             <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest opacity-30 hover:opacity-100" onClick={() => router.push("/")}>
-               Back to Home
-             </Button>
+             <Link href="/">
+               <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-navy/40 hover:text-primary">
+                 Back to Home
+               </Button>
+             </Link>
           </div>
         </div>
       </motion.div>
