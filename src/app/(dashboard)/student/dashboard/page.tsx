@@ -13,6 +13,7 @@ import Link from "next/link";
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [submittedQuizIds, setSubmittedQuizIds] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<StudyNote[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -21,16 +22,24 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [quizRes, noticeRes, leaderboardRes] = await Promise.all([
+        const [quizRes, noticeRes, leaderboardRes, resultsRes] = await Promise.all([
           api.get("/quizzes"),
           api.get("/notices"),
-          api.get("/analytics/leaderboard")
+          api.get("/analytics/leaderboard"),
+          api.get("/results/student").catch(() => ({ data: [] }))
         ]);
         
         // Filter only published quizzes for students
         setQuizzes(quizRes.data.filter((q: Quiz) => q.isPublished).slice(0, 2));
         setNotices(noticeRes.data.slice(0, 3));
         setLeaderboard(leaderboardRes.data.slice(0, 3));
+
+        const submittedSet = new Set<string>();
+        (resultsRes.data || []).forEach((r: any) => {
+          const qId = typeof r.quizId === 'object' && r.quizId ? r.quizId._id : r.quizId;
+          if (qId) submittedSet.add(qId);
+        });
+        setSubmittedQuizIds(submittedSet);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -76,27 +85,64 @@ export default function StudentDashboard() {
               {loading ? (
                 [1, 2].map(i => <div key={i} className="h-24 rounded-3xl bg-navy/5 animate-pulse" />)
               ) : quizzes.length > 0 ? (
-                quizzes.map((test) => (
-                  <Card key={test._id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:border-primary/20 transition-all group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <BookOpen size={28} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-navy">{test.title}</h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="flex items-center gap-1 text-xs font-medium text-navy/40"><Clock size={14} /> {test.duration} mins</span>
-                          <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">{test.category}</span>
+                quizzes.map((test: any) => {
+                  const isSubmitted = submittedQuizIds.has(test._id);
+                  const isExpired = test.endDate ? new Date() > new Date(test.endDate) : false;
+
+                  let badge = (
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2.5 py-1 rounded-full">
+                      Ready to Attempt
+                    </span>
+                  );
+                  let btnText = "Begin Assessment";
+                  let btnStyle = "bg-primary hover:bg-primary/90 text-white";
+
+                  if (isSubmitted) {
+                    badge = (
+                      <span className="text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-500/10 px-2.5 py-1 rounded-full">
+                        Submitted
+                      </span>
+                    );
+                    btnText = "Review Attempt";
+                    btnStyle = "bg-navy hover:bg-navy/90 text-white";
+                  } else if (isExpired) {
+                    badge = (
+                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-500/10 px-2.5 py-1 rounded-full">
+                        Ended
+                      </span>
+                    );
+                    btnText = "View Paper (Ended)";
+                    btnStyle = "bg-amber-600 hover:bg-amber-700 text-white";
+                  }
+
+                  return (
+                    <Card key={test._id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:border-primary/20 transition-all group gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                          isSubmitted ? 'bg-green-500/10 text-green-600' : isExpired ? 'bg-amber-500/10 text-amber-600' : 'bg-primary/10 text-primary'
+                        }`}>
+                          <BookOpen size={28} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest">{test.subject}</span>
+                            <span className="text-[9px] font-black text-navy/30 uppercase tracking-widest">• {test.class}</span>
+                          </div>
+                          <h3 className="font-bold text-navy text-lg">{test.title}</h3>
+                          <div className="flex flex-wrap items-center gap-3 mt-2">
+                            <span className="flex items-center gap-1 text-xs font-bold text-navy/40"><Clock size={14} /> {test.duration} mins</span>
+                            {badge}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <Link href={`/student/tests/${test._id}`}>
-                      <Button size="sm" className="mt-4 md:mt-0 flex items-center gap-2">
-                        Start Now <ArrowRight size={16} />
-                      </Button>
-                    </Link>
-                  </Card>
-                ))
+                      <Link href={`/student/tests/${test._id}`} className="shrink-0">
+                        <Button size="sm" className={`mt-4 md:mt-0 flex items-center gap-2 ${btnStyle}`}>
+                          {btnText} <ArrowRight size={16} />
+                        </Button>
+                      </Link>
+                    </Card>
+                  );
+                })
               ) : (
                 <p className="text-navy/40 text-sm font-medium italic">No upcoming tests scheduled.</p>
               )}
@@ -158,12 +204,20 @@ export default function StudentDashboard() {
             </Link>
           </section>
 
-
           <Card className="bg-primary p-8 text-white relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-xl font-bold mb-2">Need Help?</h3>
-              <p className="text-white/60 text-xs leading-relaxed mb-6">Contact your assigned faculty or academic counselor for any assistance.</p>
-              <Button size="sm" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white border-none w-full">Contact Support</Button>
+              <p className="text-white/80 text-xs leading-relaxed mb-6 font-medium">Have a question about your tests, results or account?</p>
+              <a 
+                href="https://wa.me/919460234151?text=Hi%20EduSpark%2C%20I%20need%20help%20regarding%20my%20student%20account." 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block w-full"
+              >
+                <Button size="sm" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white border-none w-full flex items-center justify-center gap-2 font-bold">
+                  Contact Support
+                </Button>
+              </a>
             </div>
             <Sparkles className="absolute bottom-[-20px] right-[-20px] text-white/5" size={120} />
           </Card>

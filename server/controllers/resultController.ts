@@ -14,21 +14,25 @@ export const submitResult = async (req: any, res: Response) => {
     // 2. Validate student role & access window
     if (req.user?.role !== 'admin') {
       if (!quiz.published) {
+        console.warn(`[submitResult] Submission rejected: Quiz ${quiz._id} is not published.`);
         return res.status(403).json({ message: 'This test is not published or available for submission.' });
       }
 
       const now = new Date();
       if (quiz.startDate && now < new Date(quiz.startDate)) {
+        console.warn(`[submitResult] Submission rejected: Quiz ${quiz._id} start date is in the future.`);
         return res.status(400).json({ message: `This assessment will be available starting ${new Date(quiz.startDate).toLocaleString()}` });
       }
       if (quiz.endDate && now > new Date(quiz.endDate)) {
-        return res.status(400).json({ message: `This assessment closed on ${new Date(quiz.endDate).toLocaleString()}` });
+        console.warn(`[submitResult] Submission rejected: Quiz ${quiz._id} availability window closed at ${quiz.endDate}.`);
+        return res.status(400).json({ message: `This assessment closed on ${new Date(quiz.endDate).toLocaleString()}. Submissions are no longer accepted.` });
       }
     }
 
     // 3. Duplicate attempt protection
     const existingResult = await Result.findOne({ studentId, quizId });
     if (existingResult) {
+      console.warn(`[submitResult] Submission rejected: Student ${studentId} already submitted quiz ${quizId}.`);
       return res.status(409).json({ message: 'You have already submitted this assessment.' });
     }
 
@@ -152,6 +156,26 @@ export const getResultById = async (req: any, res: Response) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getStudentResultForQuiz = async (req: any, res: Response) => {
+  try {
+    const { quizId } = req.params;
+    const studentId = req.user.id;
+
+    const result = await Result.findOne({ studentId, quizId })
+      .populate('quizId', 'title subject totalMarks duration questions examType testType')
+      .populate('studentId', 'fullName phone profileImage');
+
+    if (!result) {
+      return res.status(404).json({ message: 'No submission found for this quiz.' });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching student result for quiz:", error);
+    res.status(500).json({ message: 'Server error fetching quiz result' });
   }
 };
 

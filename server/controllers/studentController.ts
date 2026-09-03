@@ -6,26 +6,81 @@ import bcrypt from 'bcryptjs';
 export const createStudent = async (req: Request, res: Response) => {
   try {
     console.log("POST /api/students - Request Body:", req.body);
-    const { phone, username } = req.body;
-    const searchPhone = phone || username;
+    const { fullName, phone, username, password, class: targetClass, course, parentName, parentPhone, enrolledCourses, profileImage } = req.body;
 
-    if (searchPhone) {
-      const existingStudent = await Student.findOne({
-        $or: [{ phone: searchPhone }, { username: searchPhone }]
-      });
-      if (existingStudent) {
-        console.warn("Student creation failed: Mobile number exists", searchPhone);
-        return res.status(400).json({ message: 'Student with this mobile number already exists' });
+    if (!fullName || !phone || !password || !targetClass) {
+      return res.status(400).json({ message: 'Full Name, Mobile Number, Password, and Class are required.' });
+    }
+
+    const cleanPhone = phone.trim();
+    const cleanUsername = username && username.trim() !== '' ? username.trim() : cleanPhone;
+    const cleanName = fullName.trim();
+    const cleanClass = targetClass.trim();
+
+    // Derive course if not explicitly supplied
+    let derivedCourse = course ? course.trim() : 'JEE';
+    if (!course) {
+      if (cleanClass.toUpperCase().includes('NEET')) {
+        derivedCourse = 'NEET';
+      } else if (cleanClass.toUpperCase().includes('FOUNDATION')) {
+        derivedCourse = 'Foundation';
+      } else {
+        derivedCourse = 'JEE';
       }
     }
 
-    const student = new Student(req.body);
+    // Check existing student by phone or username
+    const existingStudent = await Student.findOne({
+      $or: [
+        { phone: cleanPhone },
+        { username: cleanPhone },
+        { phone: cleanUsername },
+        { username: cleanUsername }
+      ]
+    });
+
+    if (existingStudent) {
+      if (existingStudent.phone === cleanPhone) {
+        return res.status(400).json({ message: 'A student account with this mobile number already exists.' });
+      }
+      return res.status(400).json({ message: 'A student account with this username already exists.' });
+    }
+
+    const student = new Student({
+      fullName: cleanName,
+      phone: cleanPhone,
+      username: cleanUsername,
+      password: password,
+      class: cleanClass,
+      course: derivedCourse,
+      parentName: parentName ? parentName.trim() : '',
+      parentPhone: parentPhone ? parentPhone.trim() : '',
+      enrolledCourses: Array.isArray(enrolledCourses) ? enrolledCourses : [],
+      profileImage: profileImage || '',
+      status: 'active',
+      role: 'student'
+    });
+
     await student.save();
     console.log("Student created successfully:", student._id);
-    res.status(201).json(student);
+    
+    // Return sanitized student record without password
+    const studentData = student.toObject();
+    delete (studentData as any).password;
+    res.status(201).json(studentData);
   } catch (error: any) {
     console.error("Student creation error:", error);
-    res.status(400).json({ message: error.message });
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      if (field === 'phone') {
+        return res.status(400).json({ message: 'A student account with this mobile number already exists.' });
+      }
+      if (field === 'username') {
+        return res.status(400).json({ message: 'A student account with this username already exists.' });
+      }
+      return res.status(400).json({ message: 'A student record with duplicate credentials already exists.' });
+    }
+    res.status(400).json({ message: error.message || 'Error creating student account.' });
   }
 };
 

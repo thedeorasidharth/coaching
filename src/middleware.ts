@@ -47,15 +47,19 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Auth pages behavior: ONLY redirect logged-in users away from THEIR OWN matching login pages
+  // Auth pages behavior: redirect logged-in users to their respective dashboard when visiting login/signup pages
   if (token && role) {
     // Authenticated Student opening student login/signup -> /student/dashboard
     if ((pathname === '/login' || pathname === '/signup') && role === 'student') {
       return NextResponse.redirect(new URL('/student/dashboard', request.url));
     }
-    // Authenticated Admin opening admin login -> /admin/dashboard
-    if (pathname === '/admin/login' && role === 'admin') {
+    // Authenticated Admin opening student login/signup or admin login -> /admin/dashboard
+    if ((pathname === '/login' || pathname === '/signup' || pathname === '/admin/login') && role === 'admin') {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
+    // Authenticated Student opening admin login -> /student/dashboard
+    if (pathname === '/admin/login' && role === 'student') {
+      return NextResponse.redirect(new URL('/student/dashboard', request.url));
     }
   }
 

@@ -9,11 +9,11 @@ import {
   Phone, 
   Users, 
   BookOpen, 
-  Camera, 
   ArrowLeft, 
   CheckCircle,
   ShieldCheck,
-  Building
+  Building,
+  AlertCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +24,7 @@ import api from "@/lib/axios";
 export default function AddStudentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -34,8 +34,7 @@ export default function AddStudentPage() {
     phone: "",
     parentName: "",
     parentPhone: "",
-    enrolledCourses: [] as string[],
-    profileImage: ""
+    enrolledCourses: [] as string[]
   });
 
   const courses = ["Physics", "Chemistry", "Maths", "Biology"];
@@ -49,31 +48,32 @@ export default function AddStudentPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setFormData({ ...formData, profileImage: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting Student Registration Form...");
+    setErrorMsg(null);
     setLoading(true);
     try {
-      console.log("Payload:", formData);
-      const res = await api.post("/students/create", formData);
-      console.log("Server Response:", res.data);
+      let derivedCourse = "JEE";
+      if (formData.class.toUpperCase().includes("NEET")) {
+        derivedCourse = "NEET";
+      } else if (formData.class.toUpperCase().includes("FOUNDATION")) {
+        derivedCourse = "Foundation";
+      }
+
+      const payload = {
+        ...formData,
+        phone: formData.phone.trim(),
+        username: formData.username.trim() || formData.phone.trim(),
+        fullName: formData.fullName.trim(),
+        course: derivedCourse
+      };
+
+      const res = await api.post("/students/create", payload);
       router.push("/admin/students");
     } catch (err: any) {
       console.error("Error creating student:", err);
-      console.error("Error Details:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Error creating student");
+      const msg = err.response?.data?.message || "Failed to create student account. Please try again.";
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -96,28 +96,8 @@ export default function AddStudentPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Image & Account */}
+        {/* Left Column: Login Credentials */}
         <div className="space-y-8">
-          <Card className="p-8 text-center space-y-6 bg-white/80 border-white">
-            <div className="relative inline-block">
-              <div className="w-40 h-40 rounded-[2.5rem] bg-navy/5 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center mx-auto">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <Camera size={48} className="text-navy/20" />
-                )}
-              </div>
-              <label className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-transform border-4 border-white">
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                <Camera size={20} />
-              </label>
-            </div>
-            <div>
-              <h3 className="font-bold text-navy text-lg">Profile Identity</h3>
-              <p className="text-xs text-navy/40 font-medium">Upload a clear passport size photograph.</p>
-            </div>
-          </Card>
-
           <Card className="p-8 space-y-6 bg-white/80 border-white">
             <h3 className="font-black text-navy text-sm uppercase tracking-widest border-b border-navy/5 pb-4 flex items-center gap-2">
               <ShieldCheck size={18} className="text-primary" /> Login Credentials
@@ -211,7 +191,14 @@ export default function AddStudentPage() {
               </div>
             </div>
 
-            <div className="pt-8">
+            {errorMsg && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-2xl flex items-center gap-3 text-xs font-bold">
+                <AlertCircle size={18} className="shrink-0 text-red-500" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <div className="pt-4">
               <Button type="submit" disabled={loading} className="w-full h-16 text-xl font-black gap-3 group">
                 {loading ? "Registering Student..." : (
                   <>

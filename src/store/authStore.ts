@@ -115,6 +115,10 @@ export const useAuthStore = create<AuthState>()(
               loading: false,
               authChecked: true
             });
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('auth-storage');
+              sessionStorage.clear();
+            }
           }
         }
         return fetchedUser;
@@ -135,6 +139,10 @@ export const useAuthStore = create<AuthState>()(
             loading: false,
             authChecked: true
           });
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth-storage');
+            sessionStorage.clear();
+          }
         }
       },
     }),

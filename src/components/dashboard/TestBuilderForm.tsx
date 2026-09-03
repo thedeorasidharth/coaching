@@ -392,6 +392,60 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
       )}
 
       <form onSubmit={handleFormSubmit} className="space-y-8 sm:space-y-10">
+        {/* STICKY TOP ACTION BAR */}
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border border-navy/10 py-3 px-4 sm:px-6 rounded-2xl shadow-lg flex flex-wrap items-center justify-between gap-3 transition-all">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/admin/tests">
+              <Button type="button" variant="outline" size="sm" className="h-9 px-3 text-xs font-bold gap-1.5 border-navy/10 shrink-0">
+                <ArrowLeft size={14} /> Back
+              </Button>
+            </Link>
+            <div className="min-w-0">
+              <h4 className="font-bold text-navy text-sm leading-none truncate max-w-[180px] sm:max-w-md">
+                {quizData.title || "Untitled Assessment"}
+              </h4>
+              <p className="text-[10px] font-black text-navy/40 uppercase tracking-widest mt-0.5">
+                {quizData.examType} • {quizData.targetClass} • {quizData.questions.length} Questions ({calculateTotalMarks()} Marks)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0">
+            {activeStep > 1 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => setActiveStep(prev => prev - 1)} 
+                className="h-10 px-4 font-bold text-xs border-navy/10"
+              >
+                ← Back
+              </Button>
+            )}
+            {activeStep < 3 && (
+              <Button 
+                type="button" 
+                size="sm"
+                onClick={() => setActiveStep(prev => prev + 1)} 
+                className="h-10 px-5 font-bold text-xs bg-navy text-white hover:bg-navy/90"
+              >
+                Next →
+              </Button>
+            )}
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              size="sm"
+              className="h-10 px-6 text-xs font-black gap-2 bg-primary hover:bg-primary/90 text-white shadow-md rounded-xl"
+            >
+              {loading ? "Saving..." : (
+                <>
+                  <CheckCircle size={16} /> {isEdit ? "Save Changes" : "Save & Finalize Test"}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
         {/* STEP 1: BASIC INFORMATION */}
         {activeStep === 1 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
@@ -802,14 +856,14 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
             </div>
 
             {/* Bottom Actions Bar */}
-            <Card className="p-4 sm:p-6 bg-white border-white shadow-2xl flex flex-col sm:flex-row justify-between items-center gap-3 rounded-[2rem]">
-              <Button type="button" variant="outline" onClick={() => setActiveStep(2)} className="w-full sm:w-auto h-12 sm:h-14 px-8 font-bold text-xs sm:text-base">
+            <Card className="p-4 sm:p-6 bg-white border border-navy/5 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4 rounded-2xl sm:rounded-3xl mt-8">
+              <Button type="button" variant="outline" onClick={() => setActiveStep(2)} className="w-full sm:w-auto h-12 px-8 font-bold text-xs sm:text-sm border-navy/10">
                 ← Back to Schedule
               </Button>
-              <Button type="submit" disabled={loading} className="w-full sm:w-auto h-12 sm:h-14 px-10 text-xs sm:text-base font-black gap-3 shadow-xl">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto h-12 px-10 text-xs sm:text-sm font-black gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg rounded-xl">
                 {loading ? "Saving Assessment..." : (
                   <>
-                    <CheckCircle size={20} /> {isEdit ? "Save Changes" : "Save & Finalize Test"}
+                    <CheckCircle size={18} /> {isEdit ? "Save Changes" : "Save & Finalize Test"}
                   </>
                 )}
               </Button>

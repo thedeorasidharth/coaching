@@ -75,66 +75,81 @@ export default function StudentResultsPage() {
                 <Button className="h-14 px-8">Browse Assessments</Button>
              </Link>
           </div>
-        ) : results.map((result, i) => (
-          <motion.div
-            key={result._id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="p-8 space-y-8 hover:shadow-2xl transition-all border-white group relative overflow-hidden h-full flex flex-col">
-              <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                 <ArrowLeft className="rotate-180 text-primary" size={24} />
-              </div>
+        ) : results.map((result, i) => {
+          const quizId = typeof result.quizId === 'object' && result.quizId ? result.quizId._id : result.quizId;
+          const quizTitle = typeof result.quizId === 'object' && result.quizId ? result.quizId.title : "Assessment Record";
+          const quizSubject = typeof result.quizId === 'object' && result.quizId ? result.quizId.subject : "General";
+          const totalMarks = typeof result.quizId === 'object' && result.quizId ? result.quizId.totalMarks : (result.totalMarks || "--");
 
-              <div className="flex justify-between items-start">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors duration-500 ${result.percentage >= 75 ? "bg-green-500 text-white" : result.percentage >= 40 ? "bg-primary text-white" : "bg-red-500 text-white"}`}>
-                  <Award size={28} />
+          return (
+            <motion.div
+              key={result._id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="p-8 space-y-8 hover:shadow-2xl transition-all border-white group relative overflow-hidden h-full flex flex-col">
+                <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <ArrowLeft className="rotate-180 text-primary" size={24} />
                 </div>
-                <div className="text-right">
-                   <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest flex items-center justify-end gap-1">
-                      <Calendar size={12} /> {new Date(result.submittedAt).toLocaleDateString()}
-                   </p>
-                   <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">{result.quizId?.subject}</p>
-                </div>
-              </div>
 
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-navy leading-tight mb-6 group-hover:text-primary transition-colors">{result.quizId?.title}</h3>
-                
-                <div className="space-y-4">
-                   <div className="flex justify-between items-end">
-                      <p className="text-[10px] font-black text-navy/40 uppercase tracking-widest">Efficiency Level</p>
-                      <p className="text-sm font-black text-navy italic">{result.score} / {result.quizId?.totalMarks} Points</p>
+                <div className="flex justify-between items-start">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors duration-500 ${result.percentage >= 75 ? "bg-green-500 text-white" : result.percentage >= 40 ? "bg-primary text-white" : "bg-red-500 text-white"}`}>
+                    <Award size={28} />
+                  </div>
+                  <div className="text-right">
+                     <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest flex items-center justify-end gap-1">
+                        <Calendar size={12} /> {new Date(result.submittedAt).toLocaleDateString()}
+                     </p>
+                     <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">{quizSubject}</p>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-navy leading-tight mb-6 group-hover:text-primary transition-colors">{quizTitle}</h3>
+                  
+                  <div className="space-y-4">
+                     <div className="flex justify-between items-end">
+                        <p className="text-[10px] font-black text-navy/40 uppercase tracking-widest">Efficiency Level</p>
+                        <p className="text-sm font-black text-navy italic">{result.score} / {totalMarks} Points</p>
+                     </div>
+                     <div className="w-full h-2 bg-navy/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          className={`h-full rounded-full ${result.percentage >= 75 ? "bg-green-500" : result.percentage >= 40 ? "bg-primary" : "bg-red-500"}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${result.percentage}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
+                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-8 border-t border-navy/5">
+                   <div className="bg-navy/5 p-4 rounded-2xl text-center">
+                      <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest mb-1">Time Taken</p>
+                      <p className="text-lg font-black text-navy flex items-center justify-center gap-1"><Clock size={16} className="text-primary" /> {Math.floor((result.timeTaken || 0) / 60)}m {(result.timeTaken || 0) % 60}s</p>
                    </div>
-                   <div className="w-full h-2 bg-navy/5 rounded-full overflow-hidden">
-                      <motion.div 
-                        className={`h-full rounded-full ${result.percentage >= 75 ? "bg-green-500" : result.percentage >= 40 ? "bg-primary" : "bg-red-500"}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${result.percentage}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                      />
+                   <div className="bg-navy/5 p-4 rounded-2xl text-center">
+                      <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest mb-1">Score Result</p>
+                      <p className="text-2xl font-black text-primary italic leading-none">{Math.round(result.percentage)}%</p>
                    </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-8 border-t border-navy/5">
-                 <div className="bg-navy/5 p-4 rounded-2xl text-center">
-                    <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest mb-1">Time Taken</p>
-                    <p className="text-lg font-black text-navy flex items-center justify-center gap-1"><Clock size={16} className="text-primary" /> {Math.floor(result.timeTaken / 60)}m {result.timeTaken % 60}s</p>
-                 </div>
-                 <div className="bg-navy/5 p-4 rounded-2xl text-center">
-                    <p className="text-[9px] font-black text-navy/30 uppercase tracking-widest mb-1">Score Result</p>
-                    <p className="text-2xl font-black text-primary italic leading-none">{Math.round(result.percentage)}%</p>
-                 </div>
-              </div>
-
-              <Button variant="outline" className="w-full h-12 rounded-xl mt-6 border-navy/5 hover:border-primary/20 gap-2">
-                 Detailed Review <Search size={16} />
-              </Button>
-            </Card>
-          </motion.div>
-        ))}
+                {quizId ? (
+                  <Link href={`/student/tests/${quizId}`} className="block w-full mt-6">
+                    <Button variant="outline" className="w-full h-12 rounded-xl border-navy/10 hover:border-primary/20 gap-2 font-bold text-xs uppercase tracking-wider">
+                       Detailed Review <Search size={16} />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button disabled variant="outline" className="w-full h-12 rounded-xl mt-6 border-navy/5 gap-2 opacity-50 cursor-not-allowed text-xs font-bold uppercase">
+                     Test Record Unavailable
+                  </Button>
+                )}
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

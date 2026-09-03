@@ -17,6 +17,7 @@ router.use(protect);
 router.use(adminOnly);
 
 router.post('/create', createStudent);
+router.post('/', createStudent);
 router.get('/', getStudents);
 router.get('/:id', getStudentById);
 router.put('/:id', updateStudent);

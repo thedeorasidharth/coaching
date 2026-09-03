@@ -81,15 +81,17 @@ export default function DashboardLayout({
               <Menu size={22} />
             </button>
 
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center gap-3 bg-navy/5 px-4 py-2 rounded-2xl w-full max-w-md">
-              <Search size={18} className="text-navy/30 shrink-0" />
-              <input 
-                type="text" 
-                placeholder="Search anything..." 
-                className="bg-transparent border-none outline-none text-sm font-medium text-navy placeholder:text-navy/20 w-full"
-              />
-            </div>
+            {/* Search Bar (Admin Only) */}
+            {role === "admin" && (
+              <div className="hidden md:flex items-center gap-3 bg-navy/5 px-4 py-2 rounded-2xl w-full max-w-md">
+                <Search size={18} className="text-navy/30 shrink-0" />
+                <input 
+                  type="text" 
+                  placeholder="Search anything..." 
+                  className="bg-transparent border-none outline-none text-sm font-medium text-navy placeholder:text-navy/20 w-full"
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6 shrink-0">

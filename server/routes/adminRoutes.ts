@@ -38,10 +38,16 @@ router.post('/login', async (req, res) => {
 
 // Admin Logout
 router.post('/logout', (req, res) => {
-  res.cookie('token', '', {
+  const cookieOptions = {
     httpOnly: true,
-    expires: new Date(0),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
     path: '/'
+  };
+  res.clearCookie('token', cookieOptions);
+  res.cookie('token', '', {
+    ...cookieOptions,
+    expires: new Date(0)
   });
   res.status(200).json({ message: 'Logged out' });
 });

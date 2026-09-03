@@ -114,36 +114,54 @@ export const getQuizzes = async (req: any, res: Response) => {
 export const getQuizById = async (req: any, res: Response) => {
   try {
     const quiz = await Quiz.findById(req.params.id);
-    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    if (!quiz) {
+      console.warn(`[getQuizById] Quiz not found for ID: ${req.params.id}`);
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
 
     // For non-admin (student) requests: validate schedule & strip answer keys
     if (req.user?.role !== 'admin') {
       if (!quiz.published) {
+        console.warn(`[getQuizById] Access denied: Quiz ${quiz.title} (${quiz._id}) is not published.`);
         return res.status(403).json({ message: 'This assessment is currently unavailable.' });
       }
 
       const now = new Date();
       if (quiz.startDate && now < new Date(quiz.startDate)) {
+        console.warn(`[getQuizById] Access denied: Quiz ${quiz.title} starts at ${quiz.startDate}. Current time: ${now}`);
         return res.status(400).json({ 
           message: `This assessment will be available starting ${new Date(quiz.startDate).toLocaleString()}` 
         });
       }
-      if (quiz.endDate && now > new Date(quiz.endDate)) {
-        return res.status(400).json({ 
-          message: `This assessment closed on ${new Date(quiz.endDate).toLocaleString()}` 
-        });
+
+      const isExpired = quiz.endDate ? now > new Date(quiz.endDate) : false;
+      if (isExpired) {
+        console.log(`[getQuizById] Expired test accessed in read-only mode: ${quiz.title} (${quiz._id}) ended at ${quiz.endDate}`);
       }
 
       const sanitizedQuiz: any = quiz.toObject();
+      sanitizedQuiz.isExpired = isExpired;
       sanitizedQuiz.questions = (sanitizedQuiz.questions || []).map((q: any) => {
-        const { correctAnswer, explanation, ...safeQ } = q;
-        return safeQ;
+        if (isExpired) {
+          // For expired read-only mode, include correctAnswer so student can see the correct answer key
+          const { explanation, ...expiredSafeQ } = q;
+          return expiredSafeQ;
+        } else {
+          // For live test, strip correctAnswer and explanation to prevent answer leaks
+          const { correctAnswer, explanation, ...safeQ } = q;
+          return safeQ;
+        }
       });
       return res.json(sanitizedQuiz);
     }
 
     res.json(quiz);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'CastError') {
+      console.warn(`[getQuizById] Invalid quiz ID format: ${req.params.id}`);
+      return res.status(400).json({ message: 'Invalid quiz ID format' });
+    }
+    console.error(`[getQuizById] Server error fetching quiz ${req.params.id}:`, error);
     res.status(500).json({ message: 'Server error' });
   }
 };

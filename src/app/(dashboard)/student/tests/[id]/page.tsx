@@ -16,7 +16,8 @@ import {
   Sparkles,
   FileCheck,
   Check,
-  Zap
+  Zap,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import api from "@/lib/axios";
@@ -29,6 +30,7 @@ export default function StudentTestRunnerPage() {
   const quizId = params.id as string;
 
   const [quiz, setQuiz] = useState<any>(null);
+  const [existingResult, setExistingResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasStartedTest, setHasStartedTest] = useState(false);
 
@@ -50,26 +52,36 @@ export default function StudentTestRunnerPage() {
 
   const fetchQuiz = async () => {
     try {
-      const res = await api.get(`/quizzes/${quizId}`);
-      const data = res.data;
+      const [quizRes, checkRes] = await Promise.all([
+        api.get(`/quizzes/${quizId}`),
+        api.get(`/results/check/${quizId}`).catch(() => null)
+      ]);
+      const data = quizRes.data;
       setQuiz(data);
 
-      const savedAttempt = localStorage.getItem(attemptStorageKey);
-      if (savedAttempt) {
-        try {
-          const parsed = JSON.parse(savedAttempt);
-          setAnswers(parsed.answers || {});
-          setQuestionStatus(parsed.questionStatus || {});
-          setTimeLeft(parsed.timeLeft !== undefined ? parsed.timeLeft : data.duration * 60);
-          setHasStartedTest(true);
-        } catch (e) {
+      if (checkRes && checkRes.data) {
+        setExistingResult(checkRes.data);
+        localStorage.removeItem(attemptStorageKey);
+      } else {
+        const savedAttempt = localStorage.getItem(attemptStorageKey);
+        if (savedAttempt && !data.isExpired) {
+          try {
+            const parsed = JSON.parse(savedAttempt);
+            setAnswers(parsed.answers || {});
+            setQuestionStatus(parsed.questionStatus || {});
+            setTimeLeft(parsed.timeLeft !== undefined ? parsed.timeLeft : data.duration * 60);
+            setHasStartedTest(true);
+          } catch (e) {
+            setTimeLeft(data.duration * 60);
+          }
+        } else {
           setTimeLeft(data.duration * 60);
         }
-      } else {
-        setTimeLeft(data.duration * 60);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch quiz details", err);
+      const msg = err.response?.data?.message || "Failed to fetch test details.";
+      alert(msg);
       router.push("/student/tests");
     } finally {
       setLoading(false);
@@ -77,7 +89,7 @@ export default function StudentTestRunnerPage() {
   };
 
   useEffect(() => {
-    if (!hasStartedTest || timeLeft <= 0) return;
+    if (!hasStartedTest || timeLeft <= 0 || existingResult || quiz?.isExpired) return;
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
@@ -97,10 +109,10 @@ export default function StudentTestRunnerPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [hasStartedTest, timeLeft, answers, questionStatus]);
+  }, [hasStartedTest, timeLeft, answers, questionStatus, existingResult, quiz?.isExpired]);
 
   const saveAttemptToLocal = (ansMap: any, statusMap: any, remainingTime: number) => {
-    if (!user?._id) return;
+    if (!user?._id || quiz?.isExpired) return;
     localStorage.setItem(
       attemptStorageKey,
       JSON.stringify({
@@ -123,6 +135,7 @@ export default function StudentTestRunnerPage() {
   };
 
   const handleSelectOption = (optionIndex: number) => {
+    if (quiz?.isExpired) return;
     const newAns = { ...answers, [currentQ]: optionIndex };
     setAnswers(newAns);
     const currentSt = questionStatus[currentQ];
@@ -136,6 +149,7 @@ export default function StudentTestRunnerPage() {
   };
 
   const handleClearResponse = () => {
+    if (quiz?.isExpired) return;
     const newAns = { ...answers };
     delete newAns[currentQ];
     setAnswers(newAns);
@@ -145,6 +159,7 @@ export default function StudentTestRunnerPage() {
   };
 
   const handleMarkForReview = () => {
+    if (quiz?.isExpired) return;
     const hasAnswer = answers[currentQ] !== undefined && answers[currentQ] !== -1;
     const newSt = hasAnswer ? "answeredAndMarkedForReview" : "markedForReview";
     const newStatus = { ...questionStatus, [currentQ]: newSt };
@@ -154,6 +169,12 @@ export default function StudentTestRunnerPage() {
   };
 
   const handleSaveAndNext = () => {
+    if (quiz?.isExpired) {
+      if (currentQ < (quiz?.questions?.length || 1) - 1) {
+        setCurrentQ(prev => prev + 1);
+      }
+      return;
+    }
     const hasAnswer = answers[currentQ] !== undefined && answers[currentQ] !== -1;
     let newSt = questionStatus[currentQ];
     if (hasAnswer) {
@@ -182,7 +203,7 @@ export default function StudentTestRunnerPage() {
   const handleNavigateQuestion = (idx: number) => {
     setCurrentQ(idx);
     setMobilePaletteOpen(false);
-    if (!questionStatus[idx]) {
+    if (!quiz?.isExpired && !questionStatus[idx]) {
       const updated = { ...questionStatus, [idx]: "notAnswered" };
       setQuestionStatus(updated);
       saveAttemptToLocal(answers, updated, timeLeft);
@@ -190,15 +211,20 @@ export default function StudentTestRunnerPage() {
   };
 
   const handleSubmitAuto = async () => {
+    if (quiz?.isExpired) return;
     await submitTestPayload();
   };
 
   const handleSubmit = async () => {
+    if (quiz?.isExpired) {
+      alert("This test has closed. Submissions are no longer accepted.");
+      return;
+    }
     await submitTestPayload();
   };
 
   const submitTestPayload = async () => {
-    if (submitting) return;
+    if (submitting || quiz?.isExpired) return;
     setSubmitting(true);
     try {
       const timeTakenSec = quiz.duration * 60 - timeLeft;
@@ -210,7 +236,7 @@ export default function StudentTestRunnerPage() {
         return questionStatus[idx] || "notVisited";
       });
 
-      await api.post("/results", {
+      await api.post("/results/submit", {
         quizId,
         answers: formattedAnswers,
         questionStatus: formattedStatus,
@@ -221,6 +247,11 @@ export default function StudentTestRunnerPage() {
       router.push("/student/results");
     } catch (err: any) {
       console.error("Submission failed", err);
+      if (err.response?.status === 409) {
+        alert(err.response?.data?.message || "You have already submitted this assessment.");
+        router.push("/student/results");
+        return;
+      }
       alert(err.response?.data?.message || "Failed to submit assessment.");
     } finally {
       setSubmitting(false);
@@ -241,6 +272,506 @@ export default function StudentTestRunnerPage() {
   if (!quiz) return null;
 
   const subjectsList: string[] = ["All", ...Array.from(new Set(quiz.questions.map((q: any) => q.subject || quiz.subject || "General")))] as string[];
+
+  // READ-ONLY REVIEW MODE FOR ALREADY SUBMITTED TESTS
+  if (existingResult) {
+    const isSameAnswer = (ans1: any, ans2: any) => {
+      if (ans1 === undefined || ans1 === null || ans1 === -1 || ans2 === undefined || ans2 === null || ans2 === -1) return false;
+      return String(ans1).trim() === String(ans2).trim();
+    };
+
+    const reviewQuestions = (existingResult.quizId && Array.isArray(existingResult.quizId.questions) && existingResult.quizId.questions.length > 0)
+      ? existingResult.quizId.questions
+      : quiz.questions;
+    const currentQuestion = reviewQuestions[currentQ];
+    const studentAns = Array.isArray(existingResult.answers) ? existingResult.answers[currentQ] : -1;
+    const isUnattempted = studentAns === -1 || studentAns === null || studentAns === undefined;
+    const isCorrect = !isUnattempted && isSameAnswer(studentAns, currentQuestion.correctAnswer);
+
+    const reviewSubjectsList: string[] = ["All", ...Array.from(new Set(reviewQuestions.map((q: any) => q.subject || quiz.subject || "General")))] as string[];
+
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden font-sans w-full">
+        {/* TOP REVIEW HEADER */}
+        <header className="h-16 sm:h-20 bg-navy text-white px-4 sm:px-6 flex items-center justify-between shadow-2xl relative z-20 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/student/tests')}
+              className="h-10 px-3 bg-white/10 text-white border-white/20 hover:bg-white/20 gap-2 text-xs font-bold"
+            >
+              <ChevronLeft size={16} /> Back to Tests
+            </Button>
+            <div className="min-w-0 hidden sm:block">
+              <h1 className="font-display font-bold text-base sm:text-lg leading-none">EDUSPARK</h1>
+              <p className="text-[9px] font-black uppercase tracking-widest text-accent mt-0.5 truncate max-w-xs">{quiz.title}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-black uppercase tracking-widest flex items-center gap-1.5 border border-green-500/30">
+              <CheckCircle size={14} /> Attempt Review (Read-Only)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button 
+              type="button"
+              onClick={() => setMobilePaletteOpen(!mobilePaletteOpen)} 
+              className="lg:hidden p-2.5 rounded-xl bg-white/10 text-white"
+              aria-label="Open Question Palette"
+            >
+              <Menu size={20} />
+            </Button>
+            <Button 
+              type="button"
+              onClick={() => router.push('/student/results')}
+              className="h-10 px-4 bg-primary hover:bg-primary/90 text-white font-bold text-xs rounded-xl"
+            >
+              All Results
+            </Button>
+          </div>
+        </header>
+
+        {/* PERFORMANCE SUMMARY CARD BANNER */}
+        <div className="bg-navy/95 border-t border-white/10 text-white px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4 text-xs shrink-0">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <div>
+              <span className="text-white/40 font-bold uppercase text-[9px]">Score: </span>
+              <span className="font-black text-accent text-sm sm:text-base">{existingResult.score} / {quiz.totalMarks}</span>
+            </div>
+            <div>
+              <span className="text-white/40 font-bold uppercase text-[9px]">Percentage: </span>
+              <span className="font-black text-green-400 text-sm sm:text-base">{Math.round(existingResult.percentage)}%</span>
+            </div>
+            <div>
+              <span className="text-white/40 font-bold uppercase text-[9px]">Correct: </span>
+              <span className="font-black text-green-400">{existingResult.correctCount}</span>
+            </div>
+            <div>
+              <span className="text-white/40 font-bold uppercase text-[9px]">Incorrect: </span>
+              <span className="font-black text-red-400">{existingResult.incorrectCount}</span>
+            </div>
+            <div>
+              <span className="text-white/40 font-bold uppercase text-[9px]">Unattempted: </span>
+              <span className="font-black text-white/60">{existingResult.unattemptedCount}</span>
+            </div>
+          </div>
+          <div className="text-white/40 text-[10px] font-bold">
+            Submitted on {new Date(existingResult.submittedAt).toLocaleDateString()}
+          </div>
+        </div>
+
+        {/* SUBJECT FILTER TABS */}
+        <div className="bg-navy/90 border-t border-white/10 p-2 flex gap-2 overflow-x-auto text-white shrink-0 scrollbar-none">
+          {reviewSubjectsList.map((subj) => (
+            <button
+              key={subj}
+              onClick={() => {
+                setActiveSubject(subj);
+                if (subj !== "All") {
+                  const idx = reviewQuestions.findIndex((q: any) => (q.subject || quiz.subject || "General") === subj);
+                  if (idx !== -1) setCurrentQ(idx);
+                }
+              }}
+              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase whitespace-nowrap transition-all ${
+                activeSubject === subj ? "bg-primary text-white" : "bg-white/5 text-white/60 hover:text-white"
+              }`}
+            >
+              {subj}
+            </button>
+          ))}
+        </div>
+
+        {/* MAIN QUESTION REVIEW CONTENT */}
+        <div className="flex-1 flex overflow-hidden relative w-full">
+          <main className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-pattern w-full">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
+              {/* Question Meta Header */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/5 pb-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <span className="px-3 py-1 rounded-xl bg-navy text-white font-black text-xs">
+                    Q{currentQ + 1} of {reviewQuestions.length}
+                  </span>
+                  <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+                    {currentQuestion.subject || quiz.subject || 'General'}
+                  </span>
+                  {isUnattempted ? (
+                    <span className="px-3 py-1 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold">Unattempted</span>
+                  ) : isCorrect ? (
+                    <span className="px-3 py-1 rounded-xl bg-green-100 text-green-700 text-xs font-bold flex items-center gap-1">
+                      <CheckCircle size={14} /> Correct (+{currentQuestion.marks || 4})
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-xl bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1">
+                      <X size={14} /> Incorrect (-{currentQuestion.negativeMarks || 1})
+                    </span>
+                  )}
+                </div>
+                <div className="text-right text-xs font-bold text-navy/40">
+                  <span>Marks: <strong className="text-navy">{currentQuestion.marks || 4}</strong></span>
+                </div>
+              </div>
+
+              {/* Question Text */}
+              <div className="space-y-4">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-navy leading-relaxed">
+                  {currentQuestion.question}
+                </h2>
+              </div>
+
+              {/* Review Options List */}
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 pt-2">
+                {currentQuestion.options.map((opt: string, oIdx: number) => {
+                  const isSelected = isSameAnswer(studentAns, oIdx);
+                  const isRightAnswer = isSameAnswer(currentQuestion.correctAnswer, oIdx);
+
+                  let cardStyle = "bg-white border-navy/5 text-navy opacity-75";
+                  let badge = null;
+
+                  if (isRightAnswer && isSelected) {
+                    cardStyle = "bg-green-50 border-2 border-green-500 text-green-900 font-bold shadow-md";
+                    badge = <span className="px-3 py-1 rounded-lg bg-green-600 text-white text-[10px] font-black uppercase tracking-wider">Your Correct Choice</span>;
+                  } else if (isRightAnswer) {
+                    cardStyle = "bg-green-50 border-2 border-green-500 text-green-900 font-bold shadow-md";
+                    badge = <span className="px-3 py-1 rounded-lg bg-green-600 text-white text-[10px] font-black uppercase tracking-wider">Correct Answer</span>;
+                  } else if (isSelected) {
+                    cardStyle = "bg-red-50 border-2 border-red-500 text-red-900 font-bold shadow-md";
+                    badge = <span className="px-3 py-1 rounded-lg bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">Your Choice (Incorrect)</span>;
+                  }
+
+                  return (
+                    <div
+                      key={oIdx}
+                      className={`w-full p-4 sm:p-5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${cardStyle}`}
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                        <span className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm shrink-0 ${
+                          isRightAnswer ? "bg-green-600 text-white" : isSelected ? "bg-red-600 text-white" : "bg-navy/5 text-navy/40"
+                        }`}>
+                          {String.fromCharCode(65 + oIdx)}
+                        </span>
+                        <span className="text-sm sm:text-base font-bold flex-1">{opt}</span>
+                      </div>
+                      {badge}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Explanation (if available) */}
+              {currentQuestion.explanation && (
+                <div className="p-4 sm:p-6 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-primary">Explanation & Solution</p>
+                  <p className="text-sm text-navy/80 leading-relaxed font-medium">{currentQuestion.explanation}</p>
+                </div>
+              )}
+            </div>
+
+            {/* REVIEW NAVIGATION BAR */}
+            <div className="max-w-4xl mx-auto w-full pt-6 mt-6 border-t border-navy/5 flex items-center justify-between gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={currentQ === 0}
+                onClick={() => setCurrentQ(prev => prev - 1)}
+                className="h-11 px-6 text-xs font-bold gap-2 border-navy/10"
+              >
+                <ChevronLeft size={18} /> Previous Question
+              </Button>
+              <Button
+                type="button"
+                disabled={currentQ === reviewQuestions.length - 1}
+                onClick={() => setCurrentQ(prev => prev + 1)}
+                className="h-11 px-6 text-xs font-bold gap-2 bg-navy text-white hover:bg-navy/90"
+              >
+                Next Question <ChevronRight size={18} />
+              </Button>
+            </div>
+          </main>
+
+          {/* REVIEW PALETTE SIDEBAR */}
+          <aside className={`w-80 bg-white border-l border-navy/5 p-6 flex flex-col justify-between shadow-2xl z-50 transition-all ${
+            mobilePaletteOpen ? "fixed inset-y-0 right-0 h-full w-full max-w-xs" : "hidden lg:flex"
+          }`}>
+            <div className="space-y-6 overflow-y-auto flex-1">
+              <div className="flex items-center justify-between border-b border-navy/5 pb-4">
+                <h3 className="font-black text-navy text-sm uppercase tracking-widest">Question Palette</h3>
+                <button type="button" className="lg:hidden text-navy/40 p-1" onClick={() => setMobilePaletteOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Review Status Legend */}
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
+                <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-xl">
+                  <span className="w-4 h-4 rounded-md bg-green-500 text-white flex items-center justify-center font-black">✓</span>
+                  <span className="text-green-700">Correct</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-red-500/10 rounded-xl">
+                  <span className="w-4 h-4 rounded-md bg-red-500 text-white flex items-center justify-center font-black">✕</span>
+                  <span className="text-red-700">Incorrect</span>
+                </div>
+                <div className="col-span-2 flex items-center gap-2 p-2 bg-navy/5 rounded-xl">
+                  <span className="w-4 h-4 rounded-md bg-navy/20 text-navy flex items-center justify-center font-black">-</span>
+                  <span className="text-navy/60">Unattempted</span>
+                </div>
+              </div>
+
+              {/* Palette Grid */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-navy/40">Select Question to Inspect</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {reviewQuestions.map((q: any, idx: number) => {
+                    const ans = Array.isArray(existingResult.answers) ? existingResult.answers[idx] : -1;
+                    const isQUnattempted = ans === -1 || ans === null || ans === undefined;
+                    const isQCorrect = !isQUnattempted && isSameAnswer(ans, q.correctAnswer);
+                    const isCurrent = currentQ === idx;
+
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setCurrentQ(idx); setMobilePaletteOpen(false); }}
+                        className={`h-10 rounded-xl font-bold text-xs flex items-center justify-center transition-all border ${
+                          isCurrent ? "ring-2 ring-primary ring-offset-2 scale-105" : ""
+                        } ${
+                          isQUnattempted
+                            ? "bg-navy/5 text-navy/60 border-navy/5"
+                            : isQCorrect
+                            ? "bg-green-500 text-white border-green-500 font-black"
+                            : "bg-red-500 text-white border-red-500 font-black"
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  // READ-ONLY QUESTION PAPER MODE FOR UNSUBMITTED EXPIRED TESTS
+  if (quiz.isExpired && !existingResult) {
+    const currentQuestion = quiz.questions[currentQ];
+
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden font-sans w-full">
+        {/* TOP EXPIRED HEADER */}
+        <header className="h-16 sm:h-20 bg-navy text-white px-4 sm:px-6 flex items-center justify-between shadow-2xl relative z-20 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/student/tests')}
+              className="h-10 px-3 bg-white/10 text-white border-white/20 hover:bg-white/20 gap-2 text-xs font-bold"
+            >
+              <ChevronLeft size={16} /> Back to Tests
+            </Button>
+            <div className="min-w-0 hidden sm:block">
+              <h1 className="font-display font-bold text-base sm:text-lg leading-none">EDUSPARK</h1>
+              <p className="text-[9px] font-black uppercase tracking-widest text-accent mt-0.5 truncate max-w-xs">{quiz.title}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-widest flex items-center gap-1.5 border border-amber-500/30">
+              <AlertTriangle size={14} /> Question Paper (Read-Only)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/20 text-amber-300 font-black text-xs">
+              <Clock size={16} className="text-amber-400" /> 00:00 (Ended)
+            </div>
+            <Button 
+              type="button"
+              onClick={() => setMobilePaletteOpen(!mobilePaletteOpen)} 
+              className="lg:hidden p-2.5 rounded-xl bg-white/10 text-white"
+              aria-label="Open Question Palette"
+            >
+              <Menu size={20} />
+            </Button>
+          </div>
+        </header>
+
+        {/* EXPIRED BANNER */}
+        <div className="bg-amber-500/20 border-b border-amber-500/30 text-amber-200 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs font-bold shrink-0">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+            <span>Assessment Window Closed — This test ended on {new Date(quiz.endDate).toLocaleString()}. You are inspecting the official question paper in read-only mode.</span>
+          </div>
+        </div>
+
+        {/* SUBJECT FILTER TABS */}
+        <div className="bg-navy/90 border-t border-white/10 p-2 flex gap-2 overflow-x-auto text-white shrink-0 scrollbar-none">
+          {subjectsList.map((subj) => (
+            <button
+              key={subj}
+              onClick={() => {
+                setActiveSubject(subj);
+                if (subj !== "All") {
+                  const idx = quiz.questions.findIndex((q: any) => (q.subject || quiz.subject || "General") === subj);
+                  if (idx !== -1) setCurrentQ(idx);
+                }
+              }}
+              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase whitespace-nowrap transition-all ${
+                activeSubject === subj ? "bg-primary text-white" : "bg-white/5 text-white/60 hover:text-white"
+              }`}
+            >
+              {subj}
+            </button>
+          ))}
+        </div>
+
+        {/* MAIN QUESTION REVIEW CONTENT */}
+        <div className="flex-1 flex overflow-hidden relative w-full">
+          <main className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-pattern w-full">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
+              {/* Question Meta Header */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/5 pb-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <span className="px-3 py-1 rounded-xl bg-navy text-white font-black text-xs">
+                    Q{currentQ + 1} of {quiz.questions.length}
+                  </span>
+                  <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+                    {currentQuestion.subject || quiz.subject || 'General'}
+                  </span>
+                  {currentQuestion.chapter && (
+                    <span className="px-3 py-1 rounded-xl bg-navy/5 text-navy/60 text-[10px] font-bold">
+                      {currentQuestion.chapter}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right text-xs font-bold text-navy/40">
+                  <span>+ Marks: <strong className="text-green-600">{currentQuestion.marks || 4}</strong></span>
+                  <span className="ml-3">- Marks: <strong className="text-red-500">{currentQuestion.negativeMarks || 1}</strong></span>
+                </div>
+              </div>
+
+              {/* Question Statement */}
+              <div className="space-y-4">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-navy leading-relaxed">
+                  {currentQuestion.question}
+                </h2>
+              </div>
+
+              {/* Options List with Green Highlight for Correct Answer */}
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 pt-2">
+                {currentQuestion.options.map((opt: string, oIdx: number) => {
+                  const isCorrectAnswer = currentQuestion.correctAnswer === oIdx;
+
+                  return (
+                    <div
+                      key={oIdx}
+                      className={`w-full p-4 sm:p-5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                        isCorrectAnswer
+                          ? "bg-green-50 border-2 border-green-500 text-green-900 font-bold shadow-md"
+                          : "bg-white border-navy/5 text-navy opacity-75"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                        <span className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm shrink-0 ${
+                          isCorrectAnswer ? "bg-green-600 text-white" : "bg-navy/5 text-navy/40"
+                        }`}>
+                          {String.fromCharCode(65 + oIdx)}
+                        </span>
+                        <span className="text-sm sm:text-base font-bold flex-1">{opt}</span>
+                      </div>
+                      {isCorrectAnswer && (
+                        <span className="px-3 py-1 rounded-lg bg-green-600 text-white text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1">
+                          <CheckCircle size={12} /> Correct Answer
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Explanation (if available) */}
+              {currentQuestion.explanation && (
+                <div className="p-4 sm:p-6 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-primary">Explanation & Solution</p>
+                  <p className="text-sm text-navy/80 leading-relaxed font-medium">{currentQuestion.explanation}</p>
+                </div>
+              )}
+            </div>
+
+            {/* READ-ONLY NAVIGATION BAR */}
+            <div className="max-w-4xl mx-auto w-full pt-6 mt-6 border-t border-navy/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={currentQ === 0}
+                onClick={() => setCurrentQ(prev => prev - 1)}
+                className="h-11 px-6 text-xs font-bold gap-2 border-navy/10 w-full sm:w-auto"
+              >
+                <ChevronLeft size={18} /> Previous Question
+              </Button>
+
+              <div className="px-4 py-2 rounded-xl bg-navy/5 text-navy/60 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                <BookOpen size={14} className="text-amber-500" /> READ-ONLY • QUESTION PAPER REVIEW
+              </div>
+
+              <Button
+                type="button"
+                disabled={currentQ === quiz.questions.length - 1}
+                onClick={() => setCurrentQ(prev => prev + 1)}
+                className="h-11 px-6 text-xs font-bold gap-2 bg-navy text-white hover:bg-navy/90 w-full sm:w-auto"
+              >
+                Next Question <ChevronRight size={18} />
+              </Button>
+            </div>
+          </main>
+
+          {/* PALETTE SIDEBAR */}
+          <aside className={`w-80 bg-white border-l border-navy/5 p-6 flex flex-col justify-between shadow-2xl z-50 transition-all ${
+            mobilePaletteOpen ? "fixed inset-y-0 right-0 h-full w-full max-w-xs" : "hidden lg:flex"
+          }`}>
+            <div className="space-y-6 overflow-y-auto flex-1">
+              <div className="flex items-center justify-between border-b border-navy/5 pb-4">
+                <h3 className="font-black text-navy text-sm uppercase tracking-widest">Question Paper</h3>
+                <button type="button" className="lg:hidden text-navy/40 p-1" onClick={() => setMobilePaletteOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Simple Palette Grid */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-navy/40">Select Question to Inspect</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {quiz.questions.map((_: any, idx: number) => {
+                    const isCurrent = currentQ === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setCurrentQ(idx); setMobilePaletteOpen(false); }}
+                        className={`h-10 rounded-xl font-bold text-xs flex items-center justify-center transition-all border ${
+                          isCurrent
+                            ? "bg-navy text-white border-navy font-black ring-2 ring-primary ring-offset-2 scale-105"
+                            : "bg-navy/5 text-navy/70 border-navy/5 hover:bg-navy/10"
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = quiz.questions[currentQ];
 
   const getStatusCounts = () => {
@@ -265,6 +796,7 @@ export default function StudentTestRunnerPage() {
   const counts = getStatusCounts();
 
   const formatTime = (seconds: number) => {
+    if (quiz?.isExpired) return "00:00 (Ended)";
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -288,6 +820,13 @@ export default function StudentTestRunnerPage() {
     return (
       <div className="min-h-screen bg-navy text-white flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-y-auto">
         <div className="max-w-4xl w-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-8 md:p-12 space-y-6 sm:space-y-8 shadow-2xl my-auto">
+          {quiz.isExpired && (
+            <div className="p-4 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-2xl flex items-center gap-3 text-xs sm:text-sm font-bold">
+              <AlertTriangle size={20} className="shrink-0 text-amber-400" />
+              <span>Assessment Window Closed — This test ended on {new Date(quiz.endDate).toLocaleString()}. You can inspect the question paper in read-only mode.</span>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
             <div>
               <span className="px-4 py-1 rounded-full bg-primary/20 text-accent text-[10px] font-black uppercase tracking-widest">
@@ -346,9 +885,15 @@ export default function StudentTestRunnerPage() {
           </div>
 
           <div className="pt-4 flex justify-end">
-            <Button onClick={handleStartTest} className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl font-black gap-3 bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-xl shadow-primary/30">
-              <Zap size={22} /> START TEST NOW
-            </Button>
+            {quiz.isExpired ? (
+              <Button onClick={handleStartTest} className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl font-black gap-3 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-xl">
+                <BookOpen size={22} /> INSPECT QUESTION PAPER (READ-ONLY)
+              </Button>
+            ) : (
+              <Button onClick={handleStartTest} className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl font-black gap-3 bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-xl shadow-primary/30">
+                <Zap size={22} /> START TEST NOW
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -388,7 +933,7 @@ export default function StudentTestRunnerPage() {
         {/* Timer & Controls */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 transition-all ${
-            timeLeft < 300 ? "border-red-500 bg-red-500/20 text-red-400 animate-pulse" : "border-white/10 bg-white/5 text-white"
+            quiz?.isExpired ? "border-amber-500/40 bg-amber-500/20 text-amber-300" : timeLeft < 300 ? "border-red-500 bg-red-500/20 text-red-400 animate-pulse" : "border-white/10 bg-white/5 text-white"
           }`}>
             <Clock size={18} className="text-accent shrink-0" />
             <span className="text-base sm:text-xl font-black italic tabular-nums tracking-widest">{formatTime(timeLeft)}</span>
@@ -403,15 +948,34 @@ export default function StudentTestRunnerPage() {
             <Menu size={20} />
           </Button>
 
-          <Button 
-            type="button"
-            onClick={() => setShowConfirm(true)} 
-            className="h-10 sm:h-11 px-4 sm:px-6 bg-red-600 hover:bg-red-700 text-white font-black uppercase text-xs rounded-xl shadow-lg"
-          >
-            Submit
-          </Button>
+          {quiz?.isExpired ? (
+            <Button 
+              type="button"
+              disabled
+              className="h-10 sm:h-11 px-4 sm:px-6 bg-amber-600/50 text-white font-black uppercase text-xs rounded-xl cursor-not-allowed opacity-80"
+            >
+              Test Ended
+            </Button>
+          ) : (
+            <Button 
+              type="button"
+              onClick={() => setShowConfirm(true)} 
+              className="h-10 sm:h-11 px-4 sm:px-6 bg-red-600 hover:bg-red-700 text-white font-black uppercase text-xs rounded-xl shadow-lg"
+            >
+              Submit
+            </Button>
+          )}
         </div>
       </header>
+
+      {quiz?.isExpired && (
+        <div className="bg-amber-500/20 border-b border-amber-500/30 text-amber-200 px-4 sm:px-6 py-2 flex items-center justify-between text-xs font-bold shrink-0">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+            <span>Assessment Window Closed — This test ended on {new Date(quiz.endDate).toLocaleString()}. Read-Only Question Paper Mode.</span>
+          </div>
+        </div>
+      )}
 
       {/* MOBILE SUBJECT TABS BAR */}
       <div className="lg:hidden bg-navy/95 border-t border-white/10 p-2 flex gap-2 overflow-x-auto text-white shrink-0 scrollbar-none">
