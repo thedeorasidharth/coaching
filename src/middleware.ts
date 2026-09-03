@@ -30,24 +30,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  const isAdminRoute = pathname.startsWith('/admin') && pathname !== '/admin/login';
-  const isStudentRoute = pathname.startsWith('/student');
-
-  // Protecting Admin routes (/admin, /admin/dashboard, etc.)
-  if (isAdminRoute) {
-    if (!token || role !== 'admin') {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-  }
-
-  // Protecting Student routes (/student, /student/dashboard, etc.)
-  if (isStudentRoute) {
-    if (!token || role !== 'student') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // Auth pages behavior: redirect logged-in users to their respective dashboard when visiting login/signup pages
+  // Auth pages behavior: redirect logged-in users to their respective dashboard if token cookie is present on Next.js origin
   if (token && role) {
     // Authenticated Student opening student login/signup -> /student/dashboard
     if ((pathname === '/login' || pathname === '/signup') && role === 'student') {
@@ -57,12 +40,10 @@ export function middleware(request: NextRequest) {
     if ((pathname === '/login' || pathname === '/signup' || pathname === '/admin/login') && role === 'admin') {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
-    // Authenticated Student opening admin login -> /student/dashboard
-    if (pathname === '/admin/login' && role === 'student') {
-      return NextResponse.redirect(new URL('/student/dashboard', request.url));
-    }
   }
 
+  // Delegate protected route authorization to DashboardLayout client-side verification
+  // (required for cross-origin backend deployments where auth cookies are attached to the API origin)
   return NextResponse.next();
 }
 
