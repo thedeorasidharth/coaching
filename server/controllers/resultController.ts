@@ -19,13 +19,17 @@ export const submitResult = async (req: any, res: Response) => {
       }
 
       const now = new Date();
-      if (quiz.startDate && now < new Date(quiz.startDate)) {
+      const startDateObj = quiz.startDate ? new Date(quiz.startDate) : null;
+      if (startDateObj && !isNaN(startDateObj.getTime()) && now < startDateObj) {
         console.warn(`[submitResult] Submission rejected: Quiz ${quiz._id} start date is in the future.`);
-        return res.status(400).json({ message: `This assessment will be available starting ${new Date(quiz.startDate).toLocaleString()}` });
+        const formattedStart = startDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        return res.status(400).json({ message: `This assessment will be available starting ${formattedStart}` });
       }
-      if (quiz.endDate && now > new Date(quiz.endDate)) {
+      const endDateObj = quiz.endDate ? new Date(quiz.endDate) : null;
+      if (endDateObj && !isNaN(endDateObj.getTime()) && now > endDateObj) {
         console.warn(`[submitResult] Submission rejected: Quiz ${quiz._id} availability window closed at ${quiz.endDate}.`);
-        return res.status(400).json({ message: `This assessment closed on ${new Date(quiz.endDate).toLocaleString()}. Submissions are no longer accepted.` });
+        const formattedEnd = endDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        return res.status(400).json({ message: `This assessment closed on ${formattedEnd}. Submissions are no longer accepted.` });
       }
     }
 

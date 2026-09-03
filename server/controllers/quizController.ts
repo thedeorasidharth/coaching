@@ -1,6 +1,22 @@
 import { Request, Response } from 'express';
 import { Quiz } from '../models/Quiz';
 
+const parseDateInput = (val: any): Date | undefined => {
+  if (!val) return undefined;
+  if (val instanceof Date) return isNaN(val.getTime()) ? undefined : val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return undefined;
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+      const dateWithOffset = new Date(`${trimmed.length === 16 ? trimmed + ':00' : trimmed}+05:30`);
+      if (!isNaN(dateWithOffset.getTime())) return dateWithOffset;
+    }
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+  return undefined;
+};
+
 const validateAndPrepareQuizPayload = (body: any) => {
   const { title, duration, startDate, endDate, questions } = body;
 
@@ -16,7 +32,10 @@ const validateAndPrepareQuizPayload = (body: any) => {
     throw new Error('Test must contain at least one question.');
   }
 
-  if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+  const parsedStartDate = parseDateInput(startDate);
+  const parsedEndDate = parseDateInput(endDate);
+
+  if (parsedStartDate && parsedEndDate && parsedEndDate <= parsedStartDate) {
     throw new Error('End Date & Time must be strictly after Start Date & Time.');
   }
 
@@ -51,6 +70,8 @@ const validateAndPrepareQuizPayload = (body: any) => {
     ...body,
     title: title.trim(),
     duration: Number(duration),
+    startDate: parsedStartDate,
+    endDate: parsedEndDate,
     totalQuestions,
     totalMarks,
     questions: sanitizedQuestions
@@ -127,10 +148,12 @@ export const getQuizById = async (req: any, res: Response) => {
       }
 
       const now = new Date();
-      if (quiz.startDate && now < new Date(quiz.startDate)) {
+      const startDateObj = quiz.startDate ? new Date(quiz.startDate) : null;
+      if (startDateObj && !isNaN(startDateObj.getTime()) && now < startDateObj) {
         console.warn(`[getQuizById] Access denied: Quiz ${quiz.title} starts at ${quiz.startDate}. Current time: ${now}`);
+        const formattedStart = startDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
         return res.status(400).json({ 
-          message: `This assessment will be available starting ${new Date(quiz.startDate).toLocaleString()}` 
+          message: `This assessment will be available starting ${formattedStart}` 
         });
       }
 

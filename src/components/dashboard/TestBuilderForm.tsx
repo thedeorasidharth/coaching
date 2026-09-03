@@ -37,6 +37,18 @@ interface TestBuilderFormProps {
   onSubmit: (data: any) => Promise<void>;
 }
 
+const formatForDateTimeLocal = (dateVal?: string | Date) => {
+  if (!dateVal) return "";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestBuilderFormProps) {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState<number>(1);
@@ -53,8 +65,8 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
     class: initialData?.class || "Class 12",
     duration: initialData?.duration || 60,
     published: initialData?.published || false,
-    startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : "",
-    endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : "",
+    startDate: formatForDateTimeLocal(initialData?.startDate),
+    endDate: formatForDateTimeLocal(initialData?.endDate),
     questions: initialData?.questions?.length > 0 ? initialData.questions : [
       { 
         question: "", 
@@ -326,8 +338,16 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
 
     setLoading(true);
     try {
+      const formatToISO = (dateStr?: string) => {
+        if (!dateStr) return undefined;
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? undefined : d.toISOString();
+      };
+
       await onSubmit({
         ...quizData,
+        startDate: formatToISO(quizData.startDate),
+        endDate: formatToISO(quizData.endDate),
         class: quizData.targetClass,
         totalQuestions: quizData.questions.length,
         totalMarks: calculateTotalMarks()
