@@ -12,15 +12,18 @@ router.post('/login', async (req, res) => {
   try {
     const admin = await Admin.findOne({ email });
     if (admin && (await bcrypt.compare(password, admin.password))) {
-      const token = jwt.sign({ id: admin._id, role: 'admin' }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
-      
-      res.cookie('token', token, {
+      const isProd = process.env.NODE_ENV === 'production';
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd,
+        sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
+      };
+
+      const token = jwt.sign({ id: admin._id, role: 'admin' }, process.env.JWT_SECRET || 'secret', { expiresIn: '30d' });
+      
+      res.cookie('token', token, cookieOptions);
 
       res.json({
         _id: admin._id,
@@ -38,10 +41,11 @@ router.post('/login', async (req, res) => {
 
 // Admin Logout
 router.post('/logout', (req, res) => {
+  const isProd = process.env.NODE_ENV === 'production';
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    secure: isProd,
+    sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
     path: '/'
   };
   res.clearCookie('token', cookieOptions);
