@@ -12,16 +12,18 @@ export interface User {
   username?: string;
   course?: string;
   class?: string;
+  token?: string;
 }
 
 interface AuthState {
   user: User | null;
   role: 'admin' | 'student' | null;
+  token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   isHydrated: boolean;
   authChecked: boolean;
-  setUser: (user: User | null) => void;
+  setUser: (user: User | null, token?: string | null) => void;
   setLoading: (loading: boolean) => void;
   checkAuth: (targetRole?: 'admin' | 'student') => Promise<User | null>;
   logout: () => Promise<void>;
@@ -32,18 +34,21 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       role: null,
+      token: null,
       isAuthenticated: false,
       loading: true,
       isHydrated: false,
       authChecked: false,
 
-      setUser: (user) => {
+      setUser: (user, token) => {
         if (user) {
           const formattedName = user.name || user.fullName || 'User';
-          const userObj = { ...user, name: formattedName };
+          const authToken = token || user.token || get().token || null;
+          const userObj = { ...user, name: formattedName, token: authToken || undefined };
           set({
             user: userObj,
             role: user.role || null,
+            token: authToken,
             isAuthenticated: true,
             loading: false,
             authChecked: true
@@ -52,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             role: null,
+            token: null,
             isAuthenticated: false,
             loading: false,
             authChecked: true
@@ -72,10 +78,12 @@ export const useAuthStore = create<AuthState>()(
           const response = await api.get(endpoint, { withCredentials: true });
           if (response.data && response.data._id) {
             const rawData = response.data;
+            const authToken = rawData.token || get().token || null;
             fetchedUser = {
               ...rawData,
               name: rawData.name || rawData.fullName || 'User',
-              role: rawData.role || roleToCheck
+              role: rawData.role || roleToCheck,
+              token: authToken || undefined
             };
           }
         } catch (error) {
@@ -87,10 +95,12 @@ export const useAuthStore = create<AuthState>()(
               const response = await api.get(altEndpoint, { withCredentials: true });
               if (response.data && response.data._id) {
                 const rawData = response.data;
+                const authToken = rawData.token || get().token || null;
                 fetchedUser = {
                   ...rawData,
                   name: rawData.name || rawData.fullName || 'User',
-                  role: rawData.role || altRole
+                  role: rawData.role || altRole,
+                  token: authToken || undefined
                 };
               }
             } catch (e) {
@@ -103,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: fetchedUser,
               role: fetchedUser.role,
+              token: fetchedUser.token || get().token || null,
               isAuthenticated: true,
               loading: false,
               authChecked: true
@@ -111,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: null,
               role: null,
+              token: null,
               isAuthenticated: false,
               loading: false,
               authChecked: true
@@ -135,6 +147,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             role: null,
+            token: null,
             isAuthenticated: false,
             loading: false,
             authChecked: true
@@ -151,6 +164,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         role: state.role,
+        token: state.token,
         isAuthenticated: state.isAuthenticated
       }),
       onRehydrateStorage: () => (state) => {

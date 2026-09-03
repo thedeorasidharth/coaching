@@ -53,7 +53,8 @@ router.post('/signup', async (req, res) => {
       phone: student.phone,
       course: student.course,
       class: student.class,
-      role: 'student'
+      role: 'student',
+      token
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message || 'Error registering student' });
@@ -95,7 +96,8 @@ router.post('/login', async (req, res) => {
         phone: student.phone,
         course: student.course,
         class: student.class,
-        role: 'student'
+        role: 'student',
+        token
       });
     } else {
       res.status(401).json({ message: 'Invalid mobile number or password' });
