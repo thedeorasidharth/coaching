@@ -35,7 +35,15 @@ export const createNotice = async (req: Request, res: Response) => {
 
 export const getNotices = async (req: Request, res: Response) => {
   try {
-    const notices = await Notice.find().sort({ createdAt: -1 });
+    const { limit } = req.query;
+    let queryExec = Notice.find().sort({ createdAt: -1 });
+    if (limit) {
+      const parsedLimit = parseInt(limit as string, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        queryExec = queryExec.limit(parsedLimit);
+      }
+    }
+    const notices = await queryExec.lean();
     return res.json(notices);
   } catch (error: any) {
     console.error("Get notices error:", error);

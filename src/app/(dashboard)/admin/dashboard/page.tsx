@@ -8,35 +8,63 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import api from "@/lib/axios";
 
+let cachedDashboardData: {
+  analytics: any;
+  recentStudents: any[];
+} | null = null;
+
 export default function AdminDashboard() {
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [recentStudents, setRecentStudents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<any>(() => cachedDashboardData?.analytics || null);
+  const [recentStudents, setRecentStudents] = useState<any[]>(() => cachedDashboardData?.recentStudents || []);
+  const [loading, setLoading] = useState(() => !cachedDashboardData);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAdminData = async () => {
       try {
         const [analyticsRes, studentsRes, noticesRes] = await Promise.all([
           api.get("/analytics/overview"),
-          api.get("/students"),
-          api.get("/notices")
+          api.get("/students?limit=5"),
+          api.get("/notices?limit=1")
         ]);
         
-        setAnalytics({
-          totalStudents: analyticsRes.data.totalStudents,
-          totalQuizzes: analyticsRes.data.totalTests,
-          totalNotices: noticesRes.data.length,
-          performance: analyticsRes.data.avgMarks.toFixed(1)
-        });
+        if (!isMounted) return;
+
+        const totalNoticesCount = analyticsRes.data?.totalNotices !== undefined
+          ? analyticsRes.data.totalNotices
+          : (Array.isArray(noticesRes?.data) ? noticesRes.data.length : 0);
+
+        const newAnalytics = {
+          totalStudents: analyticsRes.data?.totalStudents ?? 0,
+          totalQuizzes: analyticsRes.data?.totalTests ?? 0,
+          totalNotices: totalNoticesCount,
+          performance: Number(analyticsRes.data?.avgMarks || 0).toFixed(1)
+        };
         
-        setRecentStudents(studentsRes.data.slice(0, 5));
+        const newRecentStudents = Array.isArray(studentsRes?.data) ? studentsRes.data.slice(0, 5) : [];
+
+        cachedDashboardData = {
+          analytics: newAnalytics,
+          recentStudents: newRecentStudents
+        };
+
+        setAnalytics(newAnalytics);
+        setRecentStudents(newRecentStudents);
       } catch (error) {
         console.error("Error fetching admin dashboard data:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchAdminData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const stats = [

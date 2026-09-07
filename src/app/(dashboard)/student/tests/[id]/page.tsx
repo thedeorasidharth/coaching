@@ -1098,7 +1098,7 @@ export default function StudentTestRunnerPage() {
 
         {/* QUESTION PALETTE SIDEBAR & MOBILE DRAWER */}
         <AnimatePresence>
-          {(mobilePaletteOpen || typeof window === "undefined") && (
+          {mobilePaletteOpen && (
             <div 
               className="fixed inset-0 z-50 lg:hidden bg-navy/60 backdrop-blur-sm"
               onClick={() => setMobilePaletteOpen(false)}

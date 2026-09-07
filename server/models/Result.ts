@@ -20,5 +20,6 @@ const resultSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 resultSchema.index({ studentId: 1, quizId: 1 }, { unique: true });
+resultSchema.index({ createdAt: -1 });
 
 export const Result = mongoose.model('Result', resultSchema);

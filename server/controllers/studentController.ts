@@ -86,7 +86,7 @@ export const createStudent = async (req: Request, res: Response) => {
 
 export const getStudents = async (req: Request, res: Response) => {
   try {
-    const { className, class: classFilter, course, search } = req.query;
+    const { className, class: classFilter, course, search, limit } = req.query;
     let query: any = {};
 
     const targetClass = classFilter || className;
@@ -104,7 +104,15 @@ export const getStudents = async (req: Request, res: Response) => {
       ];
     }
 
-    const students = await Student.find(query).select('-password').sort('-createdAt');
+    let queryExec = Student.find(query).select('-password').sort('-createdAt');
+    if (limit) {
+      const parsedLimit = parseInt(limit as string, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        queryExec = queryExec.limit(parsedLimit);
+      }
+    }
+
+    const students = await queryExec.lean();
     res.json(students);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

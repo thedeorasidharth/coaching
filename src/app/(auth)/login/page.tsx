@@ -130,10 +130,11 @@ export default function StudentLoginPage() {
             </Link>
           </p>
           <div className="pt-4 border-t border-navy/5">
-             <Link href="/">
-               <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-navy/40 hover:text-primary">
-                 Back to Home
-               </Button>
+             <Link 
+               href="/" 
+               className="inline-flex items-center justify-center h-9 px-3.5 text-[10px] font-black uppercase tracking-widest text-navy/40 hover:text-primary hover:bg-navy/5 rounded-xl transition-all"
+             >
+               Back to Home
              </Link>
           </div>
         </div>

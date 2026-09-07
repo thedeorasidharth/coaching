@@ -24,4 +24,6 @@ studentSchema.pre('save', async function (this: any) {
   this.password = await bcrypt.hash(this.password, 12);
 });
 
+studentSchema.index({ createdAt: -1 });
+
 export const Student = mongoose.model('Student', studentSchema);

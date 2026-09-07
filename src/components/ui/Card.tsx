@@ -58,10 +58,10 @@ export const Card = ({ children, className, glowColor = "rgba(201, 168, 106, 0.2
     >
       <div
         style={{
-          transform: "translateZ(50px)",
+          transform: "translateZ(15px)",
           transformStyle: "preserve-3d",
         }}
-        className="relative z-10"
+        className="relative z-10 w-full h-full"
       >
         {children}
       </div>

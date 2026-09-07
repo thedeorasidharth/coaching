@@ -13,23 +13,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
   role: "admin" | "student";
 }) {
-  const { user, isAuthenticated, loading, isHydrated, authChecked, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, loading, isHydrated, checkAuth } = useAuthStore();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+  const hasVerifiedRef = React.useRef(false);
 
   useEffect(() => {
+    setHasMounted(true);
+
     if (!isHydrated) return;
 
-    let isMounted = true;
+    // Fast-path: If hydrated and not authenticated or role mismatch, immediately redirect without waiting for network
+    if (!isAuthenticated || !user) {
+      router.replace(role === "admin" ? "/admin/login" : "/login");
+      return;
+    }
 
+    if (user.role !== role) {
+      router.replace(role === "admin" ? "/admin/login" : "/login");
+      return;
+    }
+
+    // Session is already valid locally. Revalidate silently in the background (SWR) once per mount
+    if (hasVerifiedRef.current) return;
+    hasVerifiedRef.current = true;
+
+    let isMounted = true;
     const verifySession = async () => {
-      const currentUser = await checkAuth(role);
+      const currentUser = await checkAuth(role, { silent: true });
       if (!isMounted) return;
 
-      if (!currentUser) {
-        router.replace(role === "admin" ? "/admin/login" : "/login");
-      } else if (currentUser.role !== role) {
-        // Role mismatch: redirect to the login page for the requested route (never cross-redirect to other role dashboard)
+      if (!currentUser || currentUser.role !== role) {
         router.replace(role === "admin" ? "/admin/login" : "/login");
       }
     };
@@ -39,9 +54,10 @@ export default function DashboardLayout({
     return () => {
       isMounted = false;
     };
-  }, [isHydrated, role, checkAuth, router]);
+  }, [isHydrated, isAuthenticated, user?.role, role, checkAuth, router]);
 
-  if (!isHydrated || loading || !authChecked) {
+  // Render identical loading screen on SSR and initial client hydration pass until component has mounted
+  if (!hasMounted || !isHydrated || (loading && !isAuthenticated)) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-navy p-4 text-center">
         <div className="flex flex-col items-center gap-4">

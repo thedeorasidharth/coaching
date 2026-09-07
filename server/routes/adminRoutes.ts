@@ -60,7 +60,7 @@ router.post('/logout', (req, res) => {
 // Get Admin Profile
 router.get('/me', protect, adminOnly, async (req: any, res) => {
   try {
-    const admin = await Admin.findById(req.user.id).select('-password');
+    const admin = await Admin.findById(req.user.id).select('-password').lean();
     if (!admin) {
       return res.status(404).json({ message: 'Admin not found' });
     }

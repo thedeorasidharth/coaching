@@ -9,4 +9,6 @@ const noticeSchema = new mongoose.Schema({
   attachmentUrl: { type: String, default: '' },
 }, { timestamps: true });
 
+noticeSchema.index({ createdAt: -1 });
+
 export const Notice = mongoose.model('Notice', noticeSchema);

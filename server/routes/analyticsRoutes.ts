@@ -4,7 +4,8 @@ import {
   getLeaderboard, 
   getSubjectAnalytics,
   getPerformanceTrend,
-  getWeakStudents
+  getWeakStudents,
+  getAuditReport
 } from '../controllers/analyticsController';
 import { protect, adminOnly } from '../middleware/auth';
 
@@ -16,5 +17,6 @@ router.get('/overview', protect, adminOnly, getOverviewAnalytics);
 router.get('/subjects', protect, adminOnly, getSubjectAnalytics);
 router.get('/trend', protect, adminOnly, getPerformanceTrend);
 router.get('/weak-students', protect, adminOnly, getWeakStudents);
+router.get('/audit-report', protect, adminOnly, getAuditReport);
 
 export default router;

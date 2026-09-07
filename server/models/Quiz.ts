@@ -41,4 +41,6 @@ const quizSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
 }, { timestamps: true });
 
+quizSchema.index({ createdAt: -1 });
+
 export const Quiz = mongoose.model('Quiz', quizSchema);
