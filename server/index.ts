@@ -13,6 +13,7 @@ import galleryRoutes from './routes/galleryRoutes';
 import facultyRoutes from './routes/facultyRoutes';
 import resultRoutes from './routes/resultRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import questionRoutes from './routes/questionRoutes';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/student', studentAuthRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/admin/students', studentRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/questions', questionRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/analytics', analyticsRoutes);
 // app.use('/api/notes', noteRoutes);

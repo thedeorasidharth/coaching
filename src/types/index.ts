@@ -30,6 +30,11 @@ export type ExamType = 'NEET' | 'JEE' | 'Foundation';
 export type TargetClass = 'Class 11' | 'Class 12' | 'Dropper';
 export type QuestionStatus = 'notVisited' | 'notAnswered' | 'answered' | 'markedForReview' | 'answeredAndMarkedForReview';
 
+export interface QuestionImage {
+  url: string;
+  publicId: string;
+}
+
 export interface Question {
   _id?: string;
   question: string;
@@ -40,6 +45,7 @@ export interface Question {
   subject?: string;
   chapter?: string;
   explanation?: string;
+  questionImage?: QuestionImage;
 }
 
 export interface Quiz {

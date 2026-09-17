@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { Quiz } from '../models/Quiz';
+import { uploadImageStream, deleteImage } from '../config/cloudinary';
 
 const parseDateInput = (val: any): Date | undefined => {
   if (!val) return undefined;
@@ -51,24 +53,61 @@ const validateAndPrepareQuizPayload = (body: any) => {
       throw new Error(`Question #${idx + 1} correct answer must be selected (Option A, B, C, or D).`);
     }
 
+    let questionImage: any = undefined;
+    if (q.questionImage && typeof q.questionImage === 'object' && q.questionImage.url) {
+      questionImage = {
+        url: String(q.questionImage.url).trim(),
+        publicId: String(q.questionImage.publicId || '').trim()
+      };
+    }
+
+    const marks = !isNaN(Number(q.marks)) && Number(q.marks) >= 0 ? Number(q.marks) : 4;
+    const negativeMarks = !isNaN(Number(q.negativeMarks)) && Number(q.negativeMarks) >= 0 ? Number(q.negativeMarks) : 1;
+
     return {
+      ...(q._id && mongoose.Types.ObjectId.isValid(q._id) ? { _id: q._id } : {}),
       question: q.question.trim(),
       options: q.options.map((o: any) => String(o).trim()),
       correctAnswer: cAns,
-      marks: typeof q.marks === 'number' && q.marks >= 0 ? q.marks : 4,
-      negativeMarks: typeof q.negativeMarks === 'number' && q.negativeMarks >= 0 ? q.negativeMarks : 1,
+      marks,
+      negativeMarks,
       subject: q.subject ? String(q.subject).trim() : '',
       chapter: q.chapter ? String(q.chapter).trim() : '',
-      explanation: q.explanation ? String(q.explanation).trim() : ''
+      explanation: q.explanation ? String(q.explanation).trim() : '',
+      ...(questionImage ? { questionImage } : {})
     };
   });
 
   const totalQuestions = sanitizedQuestions.length;
   const totalMarks = sanitizedQuestions.reduce((sum: number, q: any) => sum + (q.marks || 4), 0);
 
+  const finalSubject = typeof body.subject === 'string' && body.subject.trim() !== ''
+    ? body.subject.trim()
+    : (sanitizedQuestions[0]?.subject || 'Physics');
+
+  const validTargetClasses = ['Class 11', 'Class 12', 'Dropper'];
+  const targetClass = validTargetClasses.includes(body.targetClass)
+    ? body.targetClass
+    : (validTargetClasses.includes(body.class) ? body.class : 'Class 12');
+
+  const finalClass = typeof body.class === 'string' && body.class.trim() !== ''
+    ? body.class.trim()
+    : targetClass;
+
+  const validExamTypes = ['NEET', 'JEE', 'Foundation'];
+  const examType = validExamTypes.includes(body.examType) ? body.examType : 'JEE';
+
+  const validTestTypes = ['Full Test', 'Chapter Test', 'Subject Test', 'Practice Test'];
+  const testType = validTestTypes.includes(body.testType) ? body.testType : 'Full Test';
+
   return {
     ...body,
     title: title.trim(),
+    subject: finalSubject,
+    class: finalClass,
+    targetClass,
+    examType,
+    testType,
     duration: Number(duration),
     startDate: parsedStartDate,
     endDate: parsedEndDate,
@@ -80,15 +119,19 @@ const validateAndPrepareQuizPayload = (body: any) => {
 
 export const createQuiz = async (req: any, res: Response) => {
   try {
+    console.log('[createQuiz] Received body:', JSON.stringify(req.body, null, 2));
     const preparedPayload = validateAndPrepareQuizPayload(req.body);
+    console.log('[createQuiz] Prepared payload:', JSON.stringify(preparedPayload, null, 2));
 
     const quiz = new Quiz({
       ...preparedPayload,
       createdBy: req.user.id
     });
     await quiz.save();
+    console.log('[createQuiz] Successfully created quiz id:', quiz._id);
     res.status(201).json(quiz);
   } catch (error: any) {
+    console.error('[createQuiz] Validation/Creation error:', error);
     res.status(400).json({ message: error.message || 'Error creating test' });
   }
 };
@@ -203,8 +246,28 @@ export const updateQuiz = async (req: Request, res: Response) => {
 
 export const deleteQuiz = async (req: Request, res: Response) => {
   try {
-    const quiz = await Quiz.findByIdAndDelete(req.params.id);
+    const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    // Collect any Cloudinary publicIds attached to this quiz
+    const publicIdsToDelete: string[] = [];
+    if (Array.isArray(quiz.questions)) {
+      quiz.questions.forEach((q: any) => {
+        if (q.questionImage && q.questionImage.publicId) {
+          publicIdsToDelete.push(q.questionImage.publicId);
+        }
+      });
+    }
+
+    await Quiz.findByIdAndDelete(req.params.id);
+
+    // Delete associated Cloudinary assets asynchronously
+    if (publicIdsToDelete.length > 0) {
+      Promise.all(publicIdsToDelete.map(pid => deleteImage(pid))).catch(err => {
+        console.error('Error cleaning up Cloudinary images for deleted quiz:', err);
+      });
+    }
+
     res.json({ message: 'Quiz deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -223,3 +286,181 @@ export const togglePublish = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+/**
+ * Upload an image directly to a specific question subdocument
+ * Route: POST /api/questions/:id/image or POST /api/quizzes/:quizId/questions/:questionId/image
+ */
+export const uploadQuestionImage = async (req: Request, res: Response) => {
+  const rawId = req.params.questionId || req.params.id;
+  const questionId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  if (!questionId || typeof questionId !== 'string' || !mongoose.Types.ObjectId.isValid(questionId)) {
+    return res.status(400).json({ message: 'Invalid question ID format.' });
+  }
+
+  if (!req.file || !req.file.buffer) {
+    return res.status(400).json({ message: 'No image file provided.' });
+  }
+
+  try {
+    // 1. Find Quiz containing this question
+    const query = req.params.quizId
+      ? { _id: req.params.quizId, 'questions._id': questionId }
+      : { 'questions._id': questionId };
+
+    const quiz = await Quiz.findOne(query);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Question not found.' });
+    }
+
+    const question = (quiz.questions as any).id(questionId);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found in quiz.' });
+    }
+
+    // 2. Note existing image publicId for cleanup after successful DB update
+    const oldPublicId = question.questionImage?.publicId;
+
+    // 3. Upload new image to Cloudinary
+    const folder = `eduspark/questions/${questionId}`;
+    const { secure_url, public_id } = await uploadImageStream(req.file.buffer, folder);
+
+    // 4. Update MongoDB
+    question.questionImage = {
+      url: secure_url,
+      publicId: public_id
+    };
+
+    try {
+      await quiz.save();
+    } catch (dbError) {
+      // If DB update fails, clean up the newly uploaded Cloudinary image
+      await deleteImage(public_id).catch(() => {});
+      throw dbError;
+    }
+
+    // 5. If replacement succeeded, delete old Cloudinary image
+    if (oldPublicId && oldPublicId !== public_id) {
+      deleteImage(oldPublicId).catch((err) => {
+        console.error(`Failed to delete replaced Cloudinary image ${oldPublicId}:`, err);
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Question image uploaded successfully.',
+      questionImage: question.questionImage,
+      question
+    });
+  } catch (error: any) {
+    console.error('Question image upload error:', error);
+    return res.status(500).json({ message: error.message || 'Error uploading question image.' });
+  }
+};
+
+/**
+ * Remove an image from a specific question subdocument
+ * Route: DELETE /api/questions/:id/image or DELETE /api/quizzes/:quizId/questions/:questionId/image
+ */
+export const deleteQuestionImage = async (req: Request, res: Response) => {
+  const rawId = req.params.questionId || req.params.id;
+  const questionId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  if (!questionId || typeof questionId !== 'string' || !mongoose.Types.ObjectId.isValid(questionId)) {
+    return res.status(400).json({ message: 'Invalid question ID format.' });
+  }
+
+  try {
+    const query = req.params.quizId
+      ? { _id: req.params.quizId, 'questions._id': questionId }
+      : { 'questions._id': questionId };
+
+    const quiz = await Quiz.findOne(query);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Question not found.' });
+    }
+
+    const question = (quiz.questions as any).id(questionId);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found in quiz.' });
+    }
+
+    const publicId = question.questionImage?.publicId;
+    if (!publicId && !question.questionImage?.url) {
+      return res.status(400).json({ message: 'Question does not have an image to remove.' });
+    }
+
+    // 1. Remove from MongoDB
+    question.questionImage = undefined;
+    await quiz.save();
+
+    // 2. Delete from Cloudinary after successful DB update
+    if (publicId) {
+      deleteImage(publicId).catch((err) => {
+        console.error(`Failed to delete removed Cloudinary image ${publicId}:`, err);
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Question image removed successfully.',
+      question
+    });
+  } catch (error: any) {
+    console.error('Question image delete error:', error);
+    return res.status(500).json({ message: error.message || 'Error deleting question image.' });
+  }
+};
+
+/**
+ * Standalone image upload (e.g. for questions in builder not yet saved to DB)
+ * Route: POST /api/quizzes/upload-image
+ */
+export const uploadStandaloneImage = async (req: Request, res: Response) => {
+  if (!req.file || !req.file.buffer) {
+    return res.status(400).json({ message: 'No image file provided.' });
+  }
+
+  try {
+    const folder = 'eduspark/questions';
+    const { secure_url, public_id } = await uploadImageStream(req.file.buffer, folder);
+
+    return res.status(200).json({
+      message: 'Image uploaded successfully.',
+      url: secure_url,
+      publicId: public_id,
+      questionImage: {
+        url: secure_url,
+        publicId: public_id
+      }
+    });
+  } catch (error: any) {
+    console.error('Standalone image upload error:', error);
+    return res.status(500).json({ message: error.message || 'Error uploading image.' });
+  }
+};
+
+/**
+ * Standalone image deletion (e.g. for cancelling an uploaded unsaved image)
+ * Route: DELETE /api/quizzes/delete-image
+ */
+export const deleteStandaloneImage = async (req: Request, res: Response) => {
+  const { publicId } = req.body;
+
+  if (!publicId || typeof publicId !== 'string') {
+    return res.status(400).json({ message: 'publicId is required.' });
+  }
+
+  // Security guard: Ensure publicId is in the eduspark/questions path
+  if (!publicId.startsWith('eduspark/questions')) {
+    return res.status(403).json({ message: 'Unauthorized asset deletion path.' });
+  }
+
+  try {
+    await deleteImage(publicId);
+    return res.status(200).json({ message: 'Image deleted from Cloudinary.' });
+  } catch (error: any) {
+    console.error('Standalone image delete error:', error);
+    return res.status(500).json({ message: error.message || 'Error deleting image.' });
+  }
+};
+

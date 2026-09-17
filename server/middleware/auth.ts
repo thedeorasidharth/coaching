@@ -4,12 +4,15 @@ import jwt from 'jsonwebtoken';
 interface AuthRequest extends Request {
   user?: any;
 }
-
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  let token = req.cookies?.token;
+  let token: string | undefined;
 
-  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+  // 1. Prioritize explicit Authorization Bearer header from active frontend session
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies?.token) {
+    // 2. Fallback to cookie if no Authorization header provided
+    token = req.cookies.token;
   }
 
   if (!token) {

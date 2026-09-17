@@ -175,12 +175,24 @@ export default function AdminQuizAnalyticsPage() {
                {quiz.questions.map((q: any, i: number) => (
                   <Card key={i} className="p-6 space-y-4 border-white shadow-xl hover:shadow-2xl hover:border-primary/20 transition-all cursor-pointer group">
                      <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Question {i + 1}</span>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Question {i + 1}</span>
+                           {q.questionImage?.url && (
+                              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[9px] font-black uppercase tracking-wider">
+                                 Diagram
+                              </span>
+                           )}
+                        </div>
                         <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-[10px] font-black uppercase">
                            Correct: 82%
                         </div>
                      </div>
                      <p className="text-sm font-bold text-navy line-clamp-2 group-hover:text-primary transition-colors">{q.question}</p>
+                     {q.questionImage?.url && (
+                        <div className="pt-1">
+                           <img src={q.questionImage.url} alt="Question diagram" className="h-16 max-w-full rounded-lg object-contain bg-white border border-navy/10 p-1" />
+                        </div>
+                     )}
                      <div className="pt-2 border-t border-navy/5 flex justify-between items-center">
                         <p className="text-[9px] font-black text-navy/20 uppercase tracking-widest">Weightage: {q.marks}M</p>
                         <ChevronRight size={16} className="text-navy/10 group-hover:text-primary transition-colors" />

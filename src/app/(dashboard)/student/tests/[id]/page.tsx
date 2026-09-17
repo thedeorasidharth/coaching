@@ -419,6 +419,19 @@ export default function StudentTestRunnerPage() {
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-navy leading-relaxed">
                   {currentQuestion.question}
                 </h2>
+                {currentQuestion.questionImage?.url && (
+                  <div className="my-4 max-w-full flex justify-center sm:justify-start">
+                    <img
+                      src={currentQuestion.questionImage.url}
+                      alt="Question diagram"
+                      className="max-h-72 sm:max-h-96 max-w-full rounded-2xl object-contain border border-navy/10 shadow-sm bg-white p-2"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Review Options List */}
@@ -660,6 +673,19 @@ export default function StudentTestRunnerPage() {
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-navy leading-relaxed">
                   {currentQuestion.question}
                 </h2>
+                {currentQuestion.questionImage?.url && (
+                  <div className="my-4 max-w-full flex justify-center sm:justify-start">
+                    <img
+                      src={currentQuestion.questionImage.url}
+                      alt="Question diagram"
+                      className="max-h-72 sm:max-h-96 max-w-full rounded-2xl object-contain border border-navy/10 shadow-sm bg-white p-2"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Options List with Green Highlight for Correct Answer */}
@@ -1023,6 +1049,19 @@ export default function StudentTestRunnerPage() {
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-navy leading-relaxed">
                 {currentQuestion.question}
               </h2>
+              {currentQuestion.questionImage?.url && (
+                <div className="my-4 max-w-full flex justify-center sm:justify-start">
+                  <img
+                    src={currentQuestion.questionImage.url}
+                    alt="Question diagram"
+                    className="max-h-72 sm:max-h-96 max-w-full rounded-2xl object-contain border border-navy/10 shadow-sm bg-white p-2"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Options List */}

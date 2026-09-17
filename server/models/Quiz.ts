@@ -9,6 +9,10 @@ const questionSchema = new mongoose.Schema({
   subject: { type: String, default: '' },
   chapter: { type: String, default: '' },
   explanation: { type: String, default: '' },
+  questionImage: {
+    url: { type: String, default: '' },
+    publicId: { type: String, default: '' }
+  }
 });
 
 const quizSchema = new mongoose.Schema({

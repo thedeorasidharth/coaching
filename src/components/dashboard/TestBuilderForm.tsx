@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+import { QuestionImageUploader } from "./QuestionImageUploader";
 
 interface TestBuilderFormProps {
   initialData?: any;
@@ -304,6 +305,12 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
       return;
     }
 
+    if (!quizData.subject || !quizData.subject.trim()) {
+      setFormError("Default Primary Subject is required.");
+      setActiveStep(1);
+      return;
+    }
+
     if (!quizData.duration || quizData.duration <= 0) {
       setFormError("Test Duration must be a positive number of minutes.");
       setActiveStep(1);
@@ -444,6 +451,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
             )}
             {activeStep < 3 && (
               <Button 
+                id="step-next-btn"
                 type="button" 
                 size="sm"
                 onClick={() => setActiveStep(prev => prev + 1)} 
@@ -453,6 +461,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
               </Button>
             )}
             <Button 
+              id="save-finalize-btn"
               type="submit" 
               disabled={loading} 
               size="sm"
@@ -479,6 +488,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Assessment Title *</label>
                   <input 
+                    id="test-title-input"
                     required 
                     type="text" 
                     placeholder="e.g. NEET 2026 Full Syllabus Mock Test #1"
@@ -542,8 +552,10 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Default Primary Subject</label>
+                    <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Default Primary Subject *</label>
                     <input 
+                      id="test-subject-input"
+                      required
                       type="text" 
                       placeholder="e.g. Physics, Chemistry, All Subjects"
                       className="w-full h-12 sm:h-14 bg-navy/5 rounded-2xl px-4 sm:px-6 outline-none border-2 border-transparent focus:bg-white focus:border-primary/20 transition-all font-bold text-navy text-sm"
@@ -557,6 +569,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                     <div className="relative">
                       <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-navy/30" size={18} />
                       <input 
+                        id="test-duration-input"
                         required 
                         type="number" 
                         min="1"
@@ -590,6 +603,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 {/* Draft vs Published Toggle */}
                 <div 
+                  id="draft-assessment-btn"
                   onClick={() => setQuizData({ ...quizData, published: false })}
                   className={`p-5 sm:p-6 rounded-3xl border-4 cursor-pointer transition-all ${!quizData.published ? 'border-navy bg-navy/5' : 'border-navy/10 bg-white hover:border-navy/20'}`}
                 >
@@ -601,6 +615,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                 </div>
 
                 <div 
+                  id="publish-assessment-btn"
                   onClick={() => setQuizData({ ...quizData, published: true })}
                   className={`p-5 sm:p-6 rounded-3xl border-4 cursor-pointer transition-all ${quizData.published ? 'border-green-500 bg-green-500/5' : 'border-navy/10 bg-white hover:border-green-500/30'}`}
                 >
@@ -759,6 +774,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                         <div className="lg:col-span-3 space-y-1">
                           <label className="text-[10px] font-black text-navy/40 uppercase tracking-widest ml-1">Question Statement *</label>
                           <textarea 
+                            id={`q-text-${qIdx}`}
                             required 
                             rows={3}
                             placeholder="Enter the complete question text..."
@@ -793,6 +809,14 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                         </div>
                       </div>
 
+                      {/* Question Diagram / Image Attachment */}
+                      <QuestionImageUploader
+                        questionId={q._id}
+                        image={q.questionImage}
+                        disabled={loading}
+                        onImageChange={(newImage) => updateQuestion(qIdx, "questionImage", newImage)}
+                      />
+
                       {/* Subject & Chapter Attributes */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -824,6 +848,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                             <div className="flex justify-between items-center ml-1">
                               <span className="text-[10px] font-black text-navy/40 uppercase tracking-widest">Option {String.fromCharCode(65 + oIdx)}</span>
                               <button 
+                                id={`q-${qIdx}-set-correct-${oIdx}`}
                                 type="button" 
                                 onClick={() => updateQuestion(qIdx, "correctAnswer", oIdx)}
                                 className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full transition-all ${
@@ -834,6 +859,7 @@ export function TestBuilderForm({ initialData, isEdit = false, onSubmit }: TestB
                               </button>
                             </div>
                             <input 
+                              id={`q-${qIdx}-opt-${oIdx}`}
                               required 
                               type="text" 
                               placeholder={`Option ${String.fromCharCode(65 + oIdx)} text...`}
